@@ -129,12 +129,13 @@ sampleBtn?.addEventListener("click", async () => {
   }
 
   // 버튼 로딩 상태
-  sampleBtn.disabled           = true;
-  sampleBtnText.textContent    = "전송 중...";
-  sampleLoader.style.display   = "inline-block";
+  sampleBtn.disabled         = true;
+  sampleBtnText.textContent  = "전송 중...";
+  sampleLoader.style.display = "inline-block";
 
   try {
-    await fetch(N8N_SAMPLE_WEBHOOK_URL, {
+    // 1차 시도: 일반 fetch (CORS 허용 시)
+    const resp = await fetch(N8N_SAMPLE_WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -143,13 +144,37 @@ sampleBtn?.addEventListener("click", async () => {
         timestamp: new Date().toISOString()
       })
     });
+
+    if (!resp.ok) {
+      throw new Error(`서버 응답 오류: ${resp.status}`);
+    }
+
     showPopup("✅ 메일함으로 샘플이 발송되었습니다!");
     sampleEmailEl.value = "";
+
   } catch (err) {
-    console.error("샘플 Webhook 오류:", err);
-    // 네트워크 오류여도 사용자 경험상 성공 처리 (n8n CORS 이슈 방지)
-    showPopup("✅ 메일함으로 샘플이 발송되었습니다!");
-    sampleEmailEl.value = "";
+    console.warn("1차 fetch 실패, no-cors 모드로 재시도:", err.message);
+
+    try {
+      // 2차 시도: no-cors 모드 (CORS 차단 우회 — 응답 읽기 불가하지만 요청은 전달됨)
+      await fetch(N8N_SAMPLE_WEBHOOK_URL, {
+        method: "POST",
+        mode:   "no-cors",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({
+          email:     email,
+          type:      "FREE_SAMPLE",
+          timestamp: new Date().toISOString()
+        })
+      });
+      // no-cors 는 응답 확인 불가 → 낙관적으로 성공 처리
+      showPopup("✅ 메일함으로 샘플이 발송되었습니다!");
+      sampleEmailEl.value = "";
+
+    } catch (err2) {
+      console.error("최종 오류:", err2);
+      alert("전송 중 오류가 발생했습니다.\n잠시 후 다시 시도해 주세요.\n\n오류: " + err2.message);
+    }
   } finally {
     sampleBtn.disabled         = false;
     sampleBtnText.textContent  = "샘플 즉시 받기";
