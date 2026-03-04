@@ -1,0 +1,110 @@
+{
+  "name": "Executive Signal - Sample Sender (완성)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sample-request",
+        "options": {
+          "responseMode": "responseNode"
+        }
+      },
+      "name": "Webhook_Receiver",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [200, 304],
+      "id": "1f146dce-0066-4761-9bda-50acec7c2450",
+      "webhookId": "0e323329-fc46-459c-bc88-bb73e9424509"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1nueWW4wfhtx2-HnadhbIWWRMcxMOfNYWZEqcpYcww94",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1396157201,
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "name": "Get_Latest_Data",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [400, 304],
+      "id": "1b5ad038-436c-4977-ba9d-82e56b4891e8",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dqkpUXSMXgjk4Ste",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ── 샘플 HTML 빌더 (실제 DART 데이터 + 구독 유도 CTA) ──\nconst requestedEmail = $('Webhook_Receiver').first().json.body.email || '';\nconst items = $input.all();\n\nconst days = ['일','월','화','수','목','금','토'];\nconst now = new Date(new Date().getTime() + 9 * 3600000); // KST\nconst dateStr = `${now.getUTCMonth()+1}/${now.getUTCDate()}(${days[now.getUTCDay()]})`;\n\n// 상위 5개 데이터만 샘플로 사용 (전체 데이터 중 최신 5개)\nconst topItems = items.slice(0, 5);\n\nlet rows = '';\nfor (const [i, item] of topItems.entries()) {\n  const d = item.json;\n  const totalAmt = Number(d['매수금액(원)']) || 0;\n  const qty = Number(d['trade_qty'] || 0).toLocaleString('ko-KR');\n  const price = d['unit_price'] > 0 ? `${Number(d['unit_price']).toLocaleString('ko-KR')}원` : '-';\n  const totalStr = totalAmt > 0 ? `<strong style=\"color:#D4AF37\">${totalAmt.toLocaleString('ko-KR')}원</strong>` : '<span style=\"color:#666\">확인불가</span>';\n  const bg = i % 2 === 0 ? '#1a1f28' : '#161B22';\n  const dartLink = `https://dart.fss.or.kr/dsaf001/main.do?rcpNo=${d['rcept_no']}`;\n\n  // 마지막 항목은 블러 처리 (구독 유도)\n  const isBlurred = i === 4;\n  const blurStyle = isBlurred ? 'filter:blur(5px); user-select:none; pointer-events:none;' : '';\n\n  rows += `<tr style=\"background:${bg}; border-bottom:1px solid #2a2f3a; ${blurStyle}\">\n    <td style=\"padding:12px; font-weight:600;\">\n      <a href=\"${dartLink}\" style=\"color:#D4AF37; text-decoration:none;\">${d['기업명'] || '-'}</a>\n      <br><span style=\"color:#666; font-size:11px;\">${d['종목코드'] || ''}</span>\n    </td>\n    <td style=\"padding:12px; color:#ccc;\">${d['임원명'] || '-'}</td>\n    <td style=\"padding:12px; text-align:right; color:#ccc;\">${qty}주</td>\n    <td style=\"padding:12px; text-align:right; color:#ccc;\">${price}</td>\n    <td style=\"padding:12px; text-align:right;\">${totalStr}</td>\n    <td style=\"padding:12px; text-align:center; color:#888; font-size:12px;\">${d['변동사유'] || '-'}</td>\n  </tr>`;\n}\n\nconst html = `<!DOCTYPE html>\n<html lang=\"ko\">\n<head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<style>\n  body { margin:0; padding:0; background:#0A0C10; color:#fff; font-family:'Apple SD Gothic Neo',Arial,sans-serif; }\n  a { color:#D4AF37; }\n</style></head>\n<body>\n<div style=\"max-width:680px; margin:0 auto; padding:32px 16px;\">\n\n  <!-- 헤더 -->\n  <div style=\"margin-bottom:28px;\">\n    <div style=\"font-size:1.3rem; font-weight:800; margin-bottom:4px;\">Executive<span style=\"color:#D4AF37;\">Signal</span></div>\n    <div style=\"font-size:0.8rem; color:#555; letter-spacing:1px;\">PREMIUM INSIDER TRADING REPORT</div>\n  </div>\n\n  <!-- 무료 샘플 배너 -->\n  <div style=\"background:linear-gradient(135deg,#1a1506,#2a2208); border:1px solid rgba(212,175,55,0.3); border-radius:12px; padding:20px 24px; margin-bottom:24px;\">\n    <div style=\"display:inline-block; background:linear-gradient(135deg,#D4AF37,#B38F2D); color:#000; font-size:0.7rem; font-weight:800; padding:3px 12px; border-radius:20px; letter-spacing:1px; margin-bottom:8px;\">FREE SAMPLE</div>\n    <h2 style=\"margin:0 0 4px; font-size:1.2rem;\">[무료 샘플] ${dateStr} 임원 매수 신호</h2>\n    <p style=\"margin:0; color:#8B949E; font-size:0.85rem;\">오늘 포착된 임원 매수 시그널 상위 5건 (실제 데이터의 일부입니다)</p>\n  </div>\n\n  <!-- 데이터 테이블 -->\n  <div style=\"border-radius:12px; overflow:hidden; border:1px solid #2a2f3a; margin-bottom:20px; position:relative;\">\n    <table style=\"width:100%; border-collapse:collapse; font-size:13px;\">\n      <thead>\n        <tr style=\"background:#1e2430;\">\n          <th style=\"padding:12px; text-align:left; color:#D4AF37; font-size:11px; letter-spacing:1px;\">기업명</th>\n          <th style=\"padding:12px; text-align:left; color:#D4AF37; font-size:11px; letter-spacing:1px;\">임원명</th>\n          <th style=\"padding:12px; text-align:right; color:#D4AF37; font-size:11px;\">수량</th>\n          <th style=\"padding:12px; text-align:right; color:#D4AF37; font-size:11px;\">단가</th>\n          <th style=\"padding:12px; text-align:right; color:#D4AF37; font-size:11px;\">총 매수금액</th>\n          <th style=\"padding:12px; text-align:center; color:#D4AF37; font-size:11px;\">변동사유</th>\n        </tr>\n      </thead>\n      <tbody>${rows}</tbody>\n    </table>\n    <!-- 마지막 행 잠금 오버레이 -->\n    <div style=\"position:relative; background:#161B22; border-top:1px solid #2a2f3a; padding:16px; text-align:center; font-size:0.85rem; color:#8B949E;\">\n      🔒 구독자에게는 <strong style=\"color:#D4AF37;\">전체 데이터가 매일 발송</strong>됩니다.\n    </div>\n  </div>\n\n  <!-- CTA 카드 -->\n  <div style=\"background:#161B22; border:1px solid rgba(212,175,55,0.25); border-radius:16px; padding:32px 24px; text-align:center; margin-bottom:24px;\">\n    <h3 style=\"margin:0 0 8px; font-size:1.3rem;\">매일 아침 8시, 놓치는 시그널이 없도록</h3>\n    <p style=\"color:#8B949E; margin:0 0 24px; font-size:0.9rem; line-height:1.7;\">오늘 확인한 샘플은 전체 데이터의 일부입니다.<br>구독하면 <strong style=\"color:#fff;\">모든 임원 매수 시그널</strong>을 매일 받아볼 수 있습니다.</p>\n    <div style=\"margin-bottom:16px;\">\n      <span style=\"text-decoration:line-through; color:#555; font-size:0.9rem;\">₩49,000</span>\n      <div style=\"font-size:2rem; font-weight:800; color:#D4AF37; margin:4px 0;\">₩29,800<span style=\"font-size:1rem; color:#8B949E;\">/월</span></div>\n    </div>\n    <a href=\"https://executivesignal.com/#pricing\" style=\"display:inline-block; background:linear-gradient(135deg,#D4AF37,#B38F2D); color:#000; font-weight:700; padding:14px 40px; border-radius:8px; text-decoration:none; font-size:1rem;\">지금 구독 시작하기 →</a>\n  </div>\n\n  <!-- 주의사항 -->\n  <p style=\"color:#444; font-size:0.75rem; line-height:1.6; border-top:1px solid #1e1e1e; padding-top:16px; margin:0;\">\n    본 리포트는 금융감독원 DART 공시 데이터를 기반으로 작성되었습니다. 임원의 실제 주식 취득일과 공시일은 법적 보고 기한(5영업일)에 따라 차이가 발생할 수 있습니다.<br>\n    모든 투자 판단의 책임은 본인에게 있습니다. © 2026 Executive Signal\n  </p>\n</div>\n</body></html>`;\n\nreturn [{ json: { email: requestedEmail, body: html, subject: `[무료 샘플] ${dateStr} 임원 매수 신호 리포트 — Executive Signal` } }];"
+      },
+      "name": "Sample_HTML_Builder",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [600, 304],
+      "id": "280b8418-095f-4ff7-869a-696c2d494048"
+    },
+    {
+      "parameters": {
+        "sendTo":  "={{ $json.email }}",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Send_Sample_Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [800, 304],
+      "id": "ab867b86-dfcb-47d8-aa03-80c9d88fe3f6",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PLOGPOTpmUdTnxS2",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"success\": true, \"message\": \"샘플 이메일 발송 완료\" }"
+      },
+      "name": "Respond_OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1000, 304],
+      "id": "respond-ok-001"
+    }
+  ],
+  "connections": {
+    "Webhook_Receiver": {
+      "main": [[{ "node": "Get_Latest_Data",    "type": "main", "index": 0 }]]
+    },
+    "Get_Latest_Data": {
+      "main": [[{ "node": "Sample_HTML_Builder", "type": "main", "index": 0 }]]
+    },
+    "Sample_HTML_Builder": {
+      "main": [[{ "node": "Send_Sample_Email",   "type": "main", "index": 0 }]]
+    },
+    "Send_Sample_Email": {
+      "main": [[{ "node": "Respond_OK",          "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": {
+    "instanceId": "fd2158a0181b920dd4ce21a28b74d2828142cc3c6685ac0ed9c69ff49e5b7b8f"
+  },
+  "tags": []
+}

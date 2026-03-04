@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>결제 완료 | Executive Signal</title>
+  <link rel="stylesheet" crossorigin
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <style>
+    :root {
+      --bg: #0A0C10;
+      --accent: #D4AF37;
+      --primary-gradient: linear-gradient(135deg, #D4AF37 0%, #B38F2D 100%);
+      --text-dim: #8B949E;
+      --card-bg: #161B22;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: #fff;
+      font-family: 'Pretendard', -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .logo {
+      font-size: 1.4rem;
+      font-weight: 800;
+      margin-bottom: 3rem;
+      letter-spacing: -0.5px;
+    }
+    .logo span { color: var(--accent); font-style: italic; }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 24px;
+      padding: 3rem 2.5rem;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    /* 아이콘 상태 */
+    .icon-wrap {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+      font-size: 2.5rem;
+    }
+    .icon-wrap.loading { background: rgba(212,175,55,0.1); animation: pulse 1.5s infinite; }
+    .icon-wrap.success { background: rgba(76,175,120,0.15); }
+    .icon-wrap.error   { background: rgba(220,80,80,0.15); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.5; }
+    }
+
+    h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 1rem; }
+    p  { color: var(--text-dim); line-height: 1.7; font-size: 0.95rem; margin-bottom: 1.5rem; }
+
+    .plan-badge {
+      display: inline-block;
+      background: var(--primary-gradient);
+      color: #000;
+      font-weight: 700;
+      font-size: 0.8rem;
+      padding: 0.3rem 1rem;
+      border-radius: 20px;
+      letter-spacing: 1px;
+      margin-bottom: 1.5rem;
+    }
+
+    .info-box {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      padding: 1.2rem 1.5rem;
+      text-align: left;
+      margin-bottom: 2rem;
+      font-size: 0.9rem;
+    }
+    .info-box .row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      color: var(--text-dim);
+    }
+    .info-box .row:last-child { margin-bottom: 0; }
+    .info-box .row span:last-child { color: #fff; font-weight: 500; }
+
+    .btn-home {
+      display: inline-block;
+      background: var(--primary-gradient);
+      color: #000;
+      font-weight: 700;
+      padding: 0.9rem 2.5rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 1rem;
+      transition: transform 0.2s;
+    }
+    .btn-home:hover { transform: translateY(-2px); }
+
+    .note {
+      margin-top: 1.5rem;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.25);
+    }
+  </style>
+</head>
+<body>
+  <div class="logo">Executive<span>Signal</span></div>
+
+  <div class="card">
+    <!-- 로딩 상태 -->
+    <div id="state-loading">
+      <div class="icon-wrap loading">⏳</div>
+      <h1>결제를 처리하고 있습니다</h1>
+      <p>잠시만 기다려 주세요.<br>구독을 등록하고 있습니다.</p>
+    </div>
+
+    <!-- 성공 상태 -->
+    <div id="state-success" style="display:none;">
+      <div class="icon-wrap success">✅</div>
+      <h1>구독이 완료되었습니다!</h1>
+      <div id="plan-badge-wrap"></div>
+      <div class="info-box" id="info-box"></div>
+      <p>내일 아침 8시부터 리포트가 발송됩니다.<br>메일함을 확인해 주세요.</p>
+      <a href="/" class="btn-home">홈으로 돌아가기</a>
+      <p class="note">문의: support@executivesignal.com</p>
+    </div>
+
+    <!-- 실패 상태 -->
+    <div id="state-error" style="display:none;">
+      <div class="icon-wrap error">❌</div>
+      <h1>처리 중 오류가 발생했습니다</h1>
+      <p id="error-msg">구독 등록 중 문제가 발생했습니다.<br>고객센터로 문의해 주시면 빠르게 처리해 드리겠습니다.</p>
+      <a href="/" class="btn-home">다시 시도하기</a>
+    </div>
+  </div>
+
+  <script>
+    // ──────────────────────────────────────────────────────
+    //  토스페이먼츠 빌링 인증 성공 후 처리
+    //  URL 파라미터: authKey, customerKey, receiveEmail, uid, plan, amount
+    // ──────────────────────────────────────────────────────
+    const N8N_PAYMENT_WEBHOOK = "https://munjuin.app.n8n.cloud/webhook/payment-success";
+
+    const params = new URLSearchParams(window.location.search);
+    const authKey     = params.get("authKey");       // 토스에서 전달
+    const customerKey = params.get("customerKey");   // 토스에서 전달
+    const receiveEmail = params.get("receiveEmail");
+    const uid         = params.get("uid");
+    const plan        = params.get("plan");          // MONTHLY | ANNUAL
+    const amount      = params.get("amount");
+
+    const planLabel = plan === "ANNUAL" ? "연간 구독 · ₩237,600" : "월간 구독 · ₩29,800/월";
+
+    function show(stateId) {
+      ["state-loading","state-success","state-error"].forEach(id => {
+        document.getElementById(id).style.display = id === stateId ? "block" : "none";
+      });
+    }
+
+    async function processPayment() {
+      if (!authKey || !customerKey) {
+        show("state-error");
+        document.getElementById("error-msg").textContent = "결제 인증 정보가 없습니다. 처음부터 다시 시도해 주세요.";
+        return;
+      }
+
+      try {
+        const resp = await fetch(N8N_PAYMENT_WEBHOOK, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            authKey,
+            customerKey,
+            receiveEmail,
+            firebaseUid: uid,
+            plan,
+            amount: Number(amount),
+            timestamp: new Date().toISOString()
+          })
+        });
+
+        if (!resp.ok) throw new Error(`n8n 응답 오류: ${resp.status}`);
+
+        // 성공 UI
+        document.getElementById("plan-badge-wrap").innerHTML =
+          `<div class="plan-badge">${plan === "ANNUAL" ? "ANNUAL" : "MONTHLY"}</div>`;
+
+        document.getElementById("info-box").innerHTML = `
+          <div class="row"><span>구독 플랜</span><span>${planLabel}</span></div>
+          <div class="row"><span>리포트 수신</span><span>${receiveEmail || "-"}</span></div>
+          <div class="row"><span>첫 발송</span><span>내일 오전 8:00</span></div>
+        `;
+
+        show("state-success");
+
+      } catch (err) {
+        console.error("결제 처리 오류:", err);
+        show("state-error");
+      }
+    }
+
+    processPayment();
+  </script>
+</body>
+</html>

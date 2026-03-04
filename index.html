@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Executive Signal | 프리미엄 임원매수 레포트</title>
+    <link rel="stylesheet" as="style" crossorigin
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <link rel="stylesheet" href="style.css">
+    <script src="https://js.tosspayments.com/v1/payment"></script>
+</head>
+
+<body>
+    <header>
+        <div class="container nav-container">
+            <div class="logo">Executive<span>Signal</span></div>
+            <nav class="auth-box">
+                <button id="auth-login-btn" class="btn-text">Google 로그인</button>
+                <div id="auth-user-info" style="display: none; align-items: center; gap: 1rem;">
+                    <img id="auth-user-avatar" src="" alt="User"
+                        style="width:32px; height:32px; border-radius:50%; border: 1px solid var(--accent)">
+                    <span id="auth-user-name" style="font-weight: 500; font-size: 0.95rem;"></span>
+                    <button id="auth-logout-btn" class="btn-text" style="font-size: 0.85rem;">로그아웃</button>
+                </div>
+                <a href="#pricing" class="btn-sm-primary" style="text-decoration: none;">시작하기</a>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container hero-grid">
+            <div class="hero-content">
+                <div class="tag">PREMIUM INSIDER TRADING REPORT</div>
+                <h1>내부 임원의 움직임이 곧<br><span class="highlight">수익의 신호</span>입니다</h1>
+                <p>상장사 임원들의 자사주 매수 공시를 실시간 분석하여,<br>매일 아침 8시 당신의 메일함으로 가장 정교한 통찰을 배달합니다.</p>
+                <div class="hero-btns">
+                    <a href="#pricing" class="btn-main">멤버십 시작하기</a>
+                    <a href="#pricing" class="btn-secondary">샘플 리포트 보기</a>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
+                    <div class="card-content">
+                        <div class="skeleton title"></div>
+                        <div class="skeleton-row"></div>
+                        <div class="skeleton-row short"></div>
+                        <div class="chart-mockup">
+                            <div class="bar" style="height: 40%"></div>
+                            <div class="bar" style="height: 70%"></div>
+                            <div class="bar" style="height: 50%"></div>
+                            <div class="bar active" style="height: 90%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Value Proposition Slides -->
+    <section class="value-slides">
+        <div class="slide-block">
+            <div class="container hero-grid">
+                <div class="hero-content">
+                    <h2 class="slide-title">폭발적인 상승보다,<br><span class="highlight">데이터가 증명하는 확실한 매물</span></h2>
+                    <p>근거 없는 급등주 추격이 아닌,<br>상장사 임원들이 직접 지갑을 열어 증명한 '진짜 정보'를 받으세요.</p>
+                </div>
+                <div class="hero-visual">
+                    <div class="glass-card" style="padding: 0;">
+                        <img src="slide_1.png" alt="데이터 시그널 증명"
+                            style="width: 100%; display: block; border-radius: 20px; filter: brightness(0.9);">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide-block">
+            <div class="container hero-grid">
+                <div class="hero-content">
+                    <h2 class="slide-title">당신의 시간은 한정되어 있고,<br>정보의 가치는 <span class="highlight">'신선함'에서 나옵니다.</span></h2>
+                    <p>바쁜 일상 속에서 쏟아지는 공시를 직접 정리할 시간은 턱없이 부족합니다.<br>가장 최신의 시그널을 골든타임 안에 정제하여 배달합니다.</p>
+                </div>
+                <div class="hero-visual">
+                    <div class="glass-card" style="padding: 0;">
+                        <img src="slide_2.png" alt="정보의 신선함"
+                            style="width: 100%; display: block; border-radius: 20px; filter: brightness(0.9);">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide-block">
+            <div class="container hero-grid">
+                <div class="hero-content">
+                    <h2 class="slide-title">정리되지 않은 정보는 소음일 뿐,<br><span class="highlight">아침 8시 정제된 통찰만 확인하세요.</span></h2>
+                    <p>매일 아침 8시, 복잡한 분석은 엔진에 맡기고 당신은 결정만 내리세요.<br>가장 신선한 리포트가 개장 전 당신을 기다립니다.</p>
+                </div>
+                <div class="hero-visual">
+                    <div class="glass-card" style="padding: 0;">
+                        <img src="slide_3.png" alt="정제된 통찰"
+                            style="width: 100%; display: block; border-radius: 20px; filter: brightness(0.9);">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="highlight">기술적 우위</h2>
+                <p>자체 데이터 구축망을 통한 압도적인 공시 분석 속도</p>
+            </div>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>실시간 DART 분석</h3>
+                    <p>자체 데이터 엔진이 24시간 DART 공시를 모니터링하여 임원들의 유의미한 매수 움직임을 즉각 포착합니다.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>AI 정밀 필터링</h3>
+                    <p>단순 매수가 아닌, 시장에 강력한 시그널을 주는 고액 매수와 직위 변화를 데이터 사이언스로 걸러냅니다.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>금융 전문 리포트</h3>
+                    <p>정갈한 디자인으로 가공된 데이터를 통해 투자 결정의 근거를 명확히 제시합니다.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section id="pricing" class="pricing">
+        <div class="container">
+            <div class="pricing-grid">
+                <!-- 무료 샘플 -->
+                <div class="pricing-card free">
+                    <div class="pricing-badge white">SAMPLE</div>
+                    <div class="card-top">
+                        <h3>첫 이용자 무료 레포트 1회 받기</h3>
+                        <p style="color: var(--text-dim); margin-top: 16px;">어떤 인사이트가 담겨있는지<br>직접 확인해 보세요.</p>
+                    </div>
+                    <ul class="check-list" style="visibility: hidden;"><li></li></ul>
+                    <div class="checkout-box" style="margin-top: 40px;">
+                        <input type="email" id="sample-email" placeholder="이메일 주소를 입력하세요">
+                        <button id="sample-button" class="btn-secondary full">
+                            <span id="sample-btn-text">샘플 즉시 받기</span>
+                            <span class="loader" id="sample-loader" style="display:none;"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 월간 구독 -->
+                <div class="pricing-card premium">
+                    <div class="pricing-badge silver">MOST POPULAR</div>
+                    <div class="card-top">
+                        <h3>월간 프리미엄 구독</h3>
+                        <div class="price-box">
+                            <span class="original-price">₩49,000</span>
+                            <div class="price">₩29,800<span>/월</span></div>
+                        </div>
+                    </div>
+                    <ul class="check-list">
+                        <li>매일 아침 8시 데일리 리포트 발송</li>
+                        <li>주요 임원 매입 실시간 속보 알림</li>
+                        <li>금융감독원 DART 공시 데이터 전수 분석</li>
+                        <li>고액 매수 및 핵심 경영진 시그널 정밀 선별</li>
+                    </ul>
+                    <div class="checkout-box">
+                        <input type="email" id="checkout-email" placeholder="리포트를 수신할 이메일">
+                        <button id="subscribe-button" class="btn-main full">월간 구독 시작</button>
+                    </div>
+                </div>
+
+                <!-- 연간 구독 -->
+                <div class="pricing-card premium" style="border-color: var(--accent); box-shadow: 0 0 30px rgba(212,175,55,0.15);">
+                    <div class="pricing-badge">BEST VALUE</div>
+                    <div class="card-top">
+                        <h3>연간 프리미엄 구독</h3>
+                        <div class="price-box">
+                            <span class="original-price">₩588,000</span>
+                            <div class="price" style="font-size: 2.8rem;">₩237,600<span style="display:block; font-size: 0.9rem; margin-top: 4px;">(월 19,800원 상당)</span></div>
+                        </div>
+                    </div>
+                    <ul class="check-list">
+                        <li>매일 아침 8시 데일리 리포트 발송</li>
+                        <li>주요 임원 매입 실시간 속보 알림</li>
+                        <li>금융감독원 DART 공시 데이터 전수 분석</li>
+                        <li>고액 매수 및 핵심 경영진 시그널 정밀 선별</li>
+                    </ul>
+                    <div class="checkout-box">
+                        <input type="email" id="checkout-email-annual" placeholder="리포트를 수신할 이메일">
+                        <button id="subscribe-button-annual" class="btn-main full">연간 결제하고 59% 절약</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-logo">Executive<span>Signal</span></div>
+            <p class="disclaimer">본 서비스는 DART 공시 데이터를 기반으로 하며, 모든 투자 판단의 책임은 본인에게 있습니다.</p>
+            <p class="copyright">© 2026 Executive Signal. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <div id="sample-popup" class="popup">✅ 메일함으로 샘플이 발송되었습니다!</div>
+
+    <!-- Firebase SDK (type="module" 필수) -->
+    <script type="module" src="script.js"></script>
+</body>
+</html>

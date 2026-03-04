@@ -1,0 +1,234 @@
+{
+  "name": "Executive Signal - Payment Processor",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "payment-success",
+        "options": {
+          "responseMode": "responseNode"
+        }
+      },
+      "name": "Webhook_Payment_Success",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [200, 304],
+      "id": "wh-payment-001",
+      "webhookId": "payment-success-handler"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 웹훅 데이터 파싱 및 유효성 검사\nconst body = $input.first().json.body;\n\nif (!body.authKey || !body.customerKey) {\n  throw new Error('필수 파라미터 누락: authKey, customerKey');\n}\n\n// 플랜별 결제 금액 및 이름 설정\nconst PLANS = {\n  'MONTHLY': { amount: 29800, name: '임원Signal 월간 구독', period: '1개월' },\n  'ANNUAL':  { amount: 237600, name: '임원Signal 연간 구독', period: '12개월' }\n};\n\nconst plan = body.plan || 'MONTHLY';\nconst planInfo = PLANS[plan] || PLANS['MONTHLY'];\n\n// 구독 만료일 계산\nconst now = new Date();\nconst expiry = new Date(now);\nif (plan === 'ANNUAL') {\n  expiry.setFullYear(expiry.getFullYear() + 1);\n} else {\n  expiry.setMonth(expiry.getMonth() + 1);\n}\n\nconst orderId = `ES-${Date.now()}-${Math.random().toString(36).substr(2,6).toUpperCase()}`;\n\nreturn [{\n  json: {\n    authKey:        body.authKey,\n    customerKey:    body.customerKey,\n    receiveEmail:   body.receiveEmail || '',\n    firebaseUid:    body.firebaseUid || '',\n    plan:           plan,\n    amount:         planInfo.amount,\n    planName:       planInfo.name,\n    planPeriod:     planInfo.period,\n    orderId:        orderId,\n    subscriptionEndDate: expiry.toISOString().split('T')[0],\n    createdAt:      now.toISOString()\n  }\n}];"
+      },
+      "name": "Parse_And_Validate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 304],
+      "id": "parse-validate-001"
+    },
+    {
+      "parameters": {
+        "url": "https://api.tosspayments.com/v1/billing/authorizations/issue",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"authKey\": \"{{ $json.authKey }}\",\n  \"customerKey\": \"{{ $json.customerKey }}\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "name": "Toss_Issue_BillingKey",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [600, 304],
+      "id": "toss-billing-key-001",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "TOSS_SECRET_KEY_CREDENTIAL_ID",
+          "name": "Toss Payments Secret Key"
+        }
+      },
+      "notes": "⚠️ n8n 자격증명에 Toss 시크릿 키 등록 필요\nBasic Auth → username: test_sk_D5b9pwE1jn4R6o96A593RG9O5Xma, password: 빈칸"
+    },
+    {
+      "parameters": {
+        "jsCode": "const prev = $('Parse_And_Validate').first().json;\nconst tossResp = $input.first().json;\n\n// 빌링키 발급 실패 처리\nif (tossResp.code) {\n  throw new Error(`[Toss 오류] ${tossResp.code}: ${tossResp.message}`);\n}\n\nconst billingKey = tossResp.billingKey;\nif (!billingKey) {\n  throw new Error('빌링키 발급 실패: billingKey가 없습니다.');\n}\n\nreturn [{\n  json: {\n    ...prev,\n    billingKey: billingKey,\n    cardCompany: tossResp.card?.company || '',\n    cardNumber: tossResp.card?.number || ''\n  }\n}];"
+      },
+      "name": "Extract_BillingKey",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [800, 304],
+      "id": "extract-billing-001"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.tosspayments.com/v1/billing/{{ $json.billingKey }}",
+        "httpMethod": "POST",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"customerKey\": \"{{ $json.customerKey }}\",\n  \"amount\": {{ $json.amount }},\n  \"orderId\": \"{{ $json.orderId }}\",\n  \"orderName\": \"{{ $json.planName }}\",\n  \"customerEmail\": \"{{ $json.receiveEmail }}\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "name": "Toss_Charge_First_Payment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [1000, 304],
+      "id": "toss-charge-001",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "TOSS_SECRET_KEY_CREDENTIAL_ID",
+          "name": "Toss Payments Secret Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const prev = $('Extract_BillingKey').first().json;\nconst chargeResp = $input.first().json;\n\n// 결제 실패 처리\nif (chargeResp.code || chargeResp.status === 'ABORTED' || chargeResp.status === 'EXPIRED') {\n  throw new Error(`[결제 실패] ${chargeResp.code}: ${chargeResp.message}`);\n}\n\nconst paidAmount = chargeResp.totalAmount || prev.amount;\nconst paymentKey = chargeResp.paymentKey || '';\n\nreturn [{\n  json: {\n    ...prev,\n    paymentKey:  paymentKey,\n    paidAmount:  paidAmount,\n    payStatus:   chargeResp.status || 'DONE'\n  }\n}];"
+      },
+      "name": "Verify_Payment",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 304],
+      "id": "verify-payment-001"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1nueWW4wfhtx2-HnadhbIWWRMcxMOfNYWZEqcpYcww94",
+          "mode": "list",
+          "cachedResultName": "dart"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "구독자",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "이메일":         "={{ $json.receiveEmail }}",
+            "플랜":           "={{ $json.plan }}",
+            "결제금액":       "={{ $json.paidAmount }}",
+            "구독시작일":     "={{ $json.createdAt.split('T')[0] }}",
+            "구독만료일":     "={{ $json.subscriptionEndDate }}",
+            "Firebase_UID":   "={{ $json.firebaseUid }}",
+            "빌링키":         "={{ $json.billingKey }}",
+            "주문번호":       "={{ $json.orderId }}",
+            "결제키":         "={{ $json.paymentKey }}",
+            "카드사":         "={{ $json.cardCompany }}",
+            "상태":           "ACTIVE",
+            "등록일시":       "={{ $json.createdAt }}"
+          }
+        },
+        "options": {}
+      },
+      "name": "Save_Subscriber_To_Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 3,
+      "position": [1400, 304],
+      "id": "save-subscriber-001",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dqkpUXSMXgjk4Ste",
+          "name": "Google Sheets account"
+        }
+      },
+      "notes": "⚠️ 스프레드시트에 '구독자' 시트를 먼저 생성하세요\n헤더: 이메일, 플랜, 결제금액, 구독시작일, 구독만료일, Firebase_UID, 빌링키, 주문번호, 결제키, 카드사, 상태, 등록일시"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\n\nconst planKr   = d.plan === 'ANNUAL' ? '연간 구독 (12개월)' : '월간 구독';\nconst amountFmt = Number(d.paidAmount).toLocaleString('ko-KR');\n\nconst html = `\n<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\n  <meta charset=\"UTF-8\">\n  <style>\n    body { font-family: 'Apple SD Gothic Neo', Arial, sans-serif; background: #0A0C10; color: #ffffff; margin: 0; padding: 0; }\n    .wrap { max-width: 600px; margin: 0 auto; padding: 40px 20px; }\n    .logo { font-size: 1.4rem; font-weight: 800; margin-bottom: 32px; }\n    .logo span { color: #D4AF37; }\n    .card { background: #161B22; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 32px; margin-bottom: 24px; }\n    h2 { font-size: 1.4rem; font-weight: 700; margin-bottom: 8px; }\n    .sub { color: #8B949E; font-size: 0.9rem; margin-bottom: 24px; }\n    .badge { display: inline-block; background: linear-gradient(135deg,#D4AF37,#B38F2D); color: #000; font-weight: 700; font-size: 0.75rem; padding: 4px 14px; border-radius: 20px; letter-spacing: 1px; margin-bottom: 20px; }\n    table { width: 100%; border-collapse: collapse; }\n    td { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }\n    td:first-child { color: #8B949E; }\n    td:last-child { text-align: right; font-weight: 500; }\n    tr:last-child td { border-bottom: none; }\n    .highlight { color: #D4AF37; }\n    .cta { display: block; text-align: center; margin-top: 28px; }\n    .cta a { background: linear-gradient(135deg,#D4AF37,#B38F2D); color: #000; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-weight: 700; font-size: 0.95rem; }\n    .footer { color: #444; font-size: 0.78rem; text-align: center; margin-top: 32px; line-height: 1.6; }\n  </style>\n</head>\n<body>\n<div class=\"wrap\">\n  <div class=\"logo\">Executive<span>Signal</span></div>\n  <div class=\"card\">\n    <h2>🎉 구독이 완료되었습니다!</h2>\n    <p class=\"sub\">임원 매수 신호를 가장 먼저 받아보실 준비가 됐습니다.</p>\n    <div class=\"badge\">${d.plan}</div>\n    <table>\n      <tr><td>구독 플랜</td><td>${planKr}</td></tr>\n      <tr><td>리포트 수신 이메일</td><td>${d.receiveEmail}</td></tr>\n      <tr><td>결제 금액</td><td class=\"highlight\">₩${amountFmt}</td></tr>\n      <tr><td>구독 만료일</td><td>${d.subscriptionEndDate}</td></tr>\n      <tr><td>주문 번호</td><td style=\"font-size:0.8rem;\">${d.orderId}</td></tr>\n    </table>\n    <div class=\"cta\">\n      <a href=\"https://executivesignal.com\">서비스 바로가기 →</a>\n    </div>\n  </div>\n  <p class=\"footer\">\n    내일 아침 8:00부터 매일 리포트가 발송됩니다.<br>\n    구독 해지 및 문의: support@executivesignal.com<br>\n    본 서비스는 DART 공시 데이터를 기반으로 하며, 모든 투자 판단의 책임은 본인에게 있습니다.\n  </p>\n</div>\n</body>\n</html>`;\n\nreturn [{ json: { ...d, welcome_email_html: html } }];"
+      },
+      "name": "Build_Welcome_Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1600, 304],
+      "id": "welcome-email-builder-001"
+    },
+    {
+      "parameters": {
+        "sendTo":  "={{ $json.receiveEmail }}",
+        "subject": "🎉 [Executive Signal] 구독이 완료되었습니다! 내일 아침 8시 첫 리포트가 발송됩니다.",
+        "message": "={{ $json.welcome_email_html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Send_Welcome_Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [1800, 304],
+      "id": "send-welcome-001",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "PLOGPOTpmUdTnxS2",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"success\": true, \"message\": \"구독 등록 완료\", \"orderId\": \"{{ $json.orderId }}\" }"
+      },
+      "name": "Respond_Success",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [2000, 304],
+      "id": "respond-success-001"
+    }
+  ],
+  "connections": {
+    "Webhook_Payment_Success": {
+      "main": [[{ "node": "Parse_And_Validate",        "type": "main", "index": 0 }]]
+    },
+    "Parse_And_Validate": {
+      "main": [[{ "node": "Toss_Issue_BillingKey",      "type": "main", "index": 0 }]]
+    },
+    "Toss_Issue_BillingKey": {
+      "main": [[{ "node": "Extract_BillingKey",         "type": "main", "index": 0 }]]
+    },
+    "Extract_BillingKey": {
+      "main": [[{ "node": "Toss_Charge_First_Payment",  "type": "main", "index": 0 }]]
+    },
+    "Toss_Charge_First_Payment": {
+      "main": [[{ "node": "Verify_Payment",             "type": "main", "index": 0 }]]
+    },
+    "Verify_Payment": {
+      "main": [[{ "node": "Save_Subscriber_To_Sheet",   "type": "main", "index": 0 }]]
+    },
+    "Save_Subscriber_To_Sheet": {
+      "main": [[{ "node": "Build_Welcome_Email",        "type": "main", "index": 0 }]]
+    },
+    "Build_Welcome_Email": {
+      "main": [[{ "node": "Send_Welcome_Email",         "type": "main", "index": 0 }]]
+    },
+    "Send_Welcome_Email": {
+      "main": [[{ "node": "Respond_Success",            "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "meta": {
+    "instanceId": "fd2158a0181b920dd4ce21a28b74d2828142cc3c6685ac0ed9c69ff49e5b7b8f"
+  },
+  "tags": []
+}
