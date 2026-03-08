@@ -1,0 +1,50 @@
+<svg width="600" height="380" viewBox="0 0 600 380" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0A0C10"/>
+      <stop offset="100%" style="stop-color:#1a1f2e"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#D4AF37"/>
+      <stop offset="100%" style="stop-color:#B38F2D"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" style="stop-color:#1a3a2a"/>
+      <stop offset="100%" style="stop-color:#2ecc71"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="380" fill="url(#bg1)" rx="16"/>
+
+  <!-- Grid lines -->
+  <line x1="60" y1="50" x2="60" y2="310" stroke="#2a2f3a" stroke-width="1"/>
+  <line x1="60" y1="310" x2="560" y2="310" stroke="#2a2f3a" stroke-width="1"/>
+  <line x1="60" y1="230" x2="560" y2="230" stroke="#2a2f3a" stroke-width="0.5" stroke-dasharray="4"/>
+  <line x1="60" y1="160" x2="560" y2="160" stroke="#2a2f3a" stroke-width="0.5" stroke-dasharray="4"/>
+  <line x1="60" y1="90" x2="560" y2="90" stroke="#2a2f3a" stroke-width="0.5" stroke-dasharray="4"/>
+
+  <!-- Bars -->
+  <rect x="90" y="220" width="50" height="90" fill="#1e4a3a" rx="4"/>
+  <rect x="170" y="185" width="50" height="125" fill="#1e4a3a" rx="4"/>
+  <rect x="250" y="200" width="50" height="110" fill="#1e4a3a" rx="4"/>
+  <!-- Signal bar (gold) -->
+  <rect x="330" y="95" width="50" height="215" fill="url(#gold)" rx="4" opacity="0.9"/>
+  <rect x="410" y="155" width="50" height="155" fill="#1e4a3a" rx="4"/>
+  <rect x="490" y="140" width="50" height="170" fill="#1e4a3a" rx="4"/>
+
+  <!-- Signal arrow on gold bar -->
+  <polygon points="355,80 370,55 385,80" fill="#D4AF37"/>
+  <line x1="370" y1="56" x2="370" y2="95" stroke="#D4AF37" stroke-width="2" stroke-dasharray="3"/>
+
+  <!-- Badge -->
+  <rect x="330" y="22" width="80" height="22" rx="11" fill="url(#gold)"/>
+  <text x="370" y="37" font-family="Arial" font-size="10" font-weight="bold" fill="#000" text-anchor="middle">DART 공시</text>
+
+  <!-- Title -->
+  <text x="300" y="350" font-family="Arial" font-size="13" fill="#8B949E" text-anchor="middle">임원 매수 공시 발생 전후 주가 변동 패턴</text>
+
+  <!-- Y-axis labels -->
+  <text x="50" y="93" font-family="Arial" font-size="10" fill="#555" text-anchor="end">+30%</text>
+  <text x="50" y="163" font-family="Arial" font-size="10" fill="#555" text-anchor="end">+20%</text>
+  <text x="50" y="233" font-family="Arial" font-size="10" fill="#555" text-anchor="end">+10%</text>
+  <text x="50" y="313" font-family="Arial" font-size="10" fill="#555" text-anchor="end">0%</text>
+</svg>
