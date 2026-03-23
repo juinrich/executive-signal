@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI 시그널 대시보드 | Executive Signal</title>
+<title>AI ìê·¸ë ëìë³´ë | Executive Signal</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
-/* ── 기존 Executive Signal 디자인 통일 ── */
+/* ââ ê¸°ì¡´ Executive Signal ëìì¸ íµì¼ ââ */
 :root {
   --bg: #111111;
   --card: #1a1a1a;
@@ -23,7 +24,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: var(--bg); color: var(--text); font-family: -apple-system, 'Segoe UI', sans-serif; min-height: 100vh; }
 
-/* ── 네비게이션 (기존 사이트와 동일) ── */
+/* ââ ë¤ë¹ê²ì´ì (ê¸°ì¡´ ì¬ì´í¸ì ëì¼) ââ */
 nav {
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 32px; height: 64px;
@@ -51,7 +52,7 @@ nav {
 }
 .btn-gold:hover { background: var(--gold-dim); }
 
-/* ── 접근 차단 오버레이 ── */
+/* ââ ì ê·¼ ì°¨ë¨ ì¤ë²ë ì´ ââ */
 .gate-overlay {
   display: none; position: fixed; inset: 0; z-index: 500;
   background: rgba(17,17,17,0.97); backdrop-filter: blur(20px);
@@ -68,7 +69,7 @@ nav {
 .gate-btn:hover { background: var(--gold-dim); }
 .gate-secondary { color: var(--muted); font-size: 13px; margin-top: 14px; cursor: pointer; text-decoration: underline; }
 
-/* ── 대시보드 레이아웃 ── */
+/* ââ ëìë³´ë ë ì´ìì ââ */
 .container { max-width: 1600px; margin: 0 auto; padding: 24px 20px; }
 .sec-title {
   font-size: 15px; font-weight: 600; margin: 28px 0 14px;
@@ -76,7 +77,7 @@ nav {
   display: flex; align-items: center; gap: 8px;
 }
 
-/* ── 요약 칩 ── */
+/* ââ ìì½ ì¹© ââ */
 .summary-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
 .chip {
   flex: 1; min-width: 110px; background: var(--card);
@@ -85,7 +86,7 @@ nav {
 .chip-n { font-size: 28px; font-weight: 700; }
 .chip-l { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
-/* ── TOP 피킹 카드 ── */
+/* ââ TOP í¼í¹ ì¹´ë ââ */
 .picks-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
 .pick-card {
   background: var(--card); border-radius: 10px; padding: 14px;
@@ -96,7 +97,7 @@ nav {
 .pick-score { font-size: 26px; font-weight: 700; }
 .pick-sub { font-size: 10px; color: var(--muted); }
 
-/* ── 스캐너 테이블 ── */
+/* ââ ì¤ìºë íì´ë¸ ââ */
 .table-wrap {
   background: var(--card); border: 1px solid var(--border);
   border-radius: 12px; overflow: auto; margin-bottom: 28px;
@@ -113,10 +114,10 @@ tr:hover td { background: #1e1e1e; }
 .bar-wrap { background: #2a2a2a; border-radius: 4px; height: 5px; width: 100%; margin-top: 3px; }
 .bar-fill { height: 5px; border-radius: 4px; }
 
-/* ── DART 공시 ── */
+/* ââ DART ê³µì ââ */
 .dart-row-impact { font-weight: 600; white-space: nowrap; }
 
-/* ── 뉴스 분석 ── */
+/* ââ ë´ì¤ ë¶ì ââ */
 .news-box {
   background: var(--card); border: 1px solid var(--border);
   border-radius: 12px; padding: 22px; margin-bottom: 28px;
@@ -140,7 +141,7 @@ tr:hover td { background: #1e1e1e; }
 .agent-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
 .agent-name { font-size: 11px; color: var(--gold); margin-bottom: 6px; font-weight: 600; }
 
-/* ── 상세 모달 ── */
+/* ââ ìì¸ ëª¨ë¬ ââ */
 .modal-overlay {
   display: none; position: fixed; inset: 0;
   background: rgba(0,0,0,.8); z-index: 200;
@@ -176,123 +177,123 @@ footer {
 </head>
 <body>
 
-<!-- ══════════════════════════════════════════════════════
-     접근 차단 오버레이 1: 로그인 필요
-══════════════════════════════════════════════════════ -->
+<!-- ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+     ì ê·¼ ì°¨ë¨ ì¤ë²ë ì´ 1: ë¡ê·¸ì¸ íì
+ââââââââââââââââââââââââââââââââââââââââââââââââââââââ -->
 <div class="gate-overlay" id="gate-login">
-  <div class="gate-icon">🔐</div>
-  <div class="gate-title">로그인이 필요합니다</div>
-  <div class="gate-desc">AI 시그널 대시보드는 Executive Signal 회원 전용 서비스입니다.<br>Google 계정으로 로그인해 주세요.</div>
-  <button class="gate-btn" id="gate-login-btn">Google로 로그인</button>
-  <div class="gate-secondary" onclick="location.href='/'">← 메인으로 돌아가기</div>
+  <div class="gate-icon">ð</div>
+  <div class="gate-title">ë¡ê·¸ì¸ì´ íìí©ëë¤</div>
+  <div class="gate-desc">AI ìê·¸ë ëìë³´ëë Executive Signal íì ì ì© ìë¹ì¤ìëë¤.<br>Google ê³ì ì¼ë¡ ë¡ê·¸ì¸í´ ì£¼ì¸ì.</div>
+  <button class="gate-btn" id="gate-login-btn">Googleë¡ ë¡ê·¸ì¸</button>
+  <div class="gate-secondary" onclick="location.href='/'">â ë©ì¸ì¼ë¡ ëìê°ê¸°</div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════
-     접근 차단 오버레이 2: 구독 필요
-══════════════════════════════════════════════════════ -->
+<!-- ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+     ì ê·¼ ì°¨ë¨ ì¤ë²ë ì´ 2: êµ¬ë íì
+ââââââââââââââââââââââââââââââââââââââââââââââââââââââ -->
 <div class="gate-overlay" id="gate-subscribe">
-  <div class="gate-icon">⭐</div>
-  <div class="gate-title">프리미엄 전용 기능입니다</div>
+  <div class="gate-icon">â­</div>
+  <div class="gate-title">íë¦¬ë¯¸ì ì ì© ê¸°ë¥ìëë¤</div>
   <div class="gate-desc">
-    AI 시그널 대시보드는 <strong style="color:var(--gold)">프리미엄 구독자</strong>만 이용할 수 있습니다.<br>
-    RSI · MACD · 볼린저밴드 · 거래량 급증 · 종합점수 분석을<br>
-    매일 무제한으로 이용해보세요.
+    AI ìê·¸ë ëìë³´ëë <strong style="color:var(--gold)">íë¦¬ë¯¸ì êµ¬ëì</strong>ë§ ì´ì©í  ì ììµëë¤.<br>
+    RSI Â· MACD Â· ë³¼ë¦°ì ë°´ë Â· ê±°ëë ê¸ì¦ Â· ì¢í©ì ì ë¶ìì<br>
+    ë§¤ì¼ ë¬´ì íì¼ë¡ ì´ì©í´ë³´ì¸ì.
   </div>
-  <button class="gate-btn" onclick="location.href='/#pricing'">멤버십 시작하기 →</button>
-  <div class="gate-secondary" id="gate-logout-btn">다른 계정으로 로그인</div>
+  <button class="gate-btn" onclick="location.href='/#pricing'">ë©¤ë²ì­ ììíê¸° â</button>
+  <div class="gate-secondary" id="gate-logout-btn">ë¤ë¥¸ ê³ì ì¼ë¡ ë¡ê·¸ì¸</div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════
-     로딩 오버레이
-══════════════════════════════════════════════════════ -->
+<!-- ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+     ë¡ë© ì¤ë²ë ì´
+ââââââââââââââââââââââââââââââââââââââââââââââââââââââ -->
 <div class="gate-overlay show" id="gate-loading">
   <div style="text-align:center">
-    <div style="font-size:48px;margin-bottom:16px">📡</div>
-    <div style="font-size:16px;color:var(--muted)">인증 확인 중...</div>
+    <div style="font-size:48px;margin-bottom:16px">ð¡</div>
+    <div style="font-size:16px;color:var(--muted)">ì¸ì¦ íì¸ ì¤...</div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════
-     네비게이션
-══════════════════════════════════════════════════════ -->
+<!-- ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+     ë¤ë¹ê²ì´ì
+ââââââââââââââââââââââââââââââââââââââââââââââââââââââ -->
 <nav>
   <a href="/" class="nav-logo">Executive<span>Signal</span></a>
   <div class="nav-right">
-    <span class="nav-badge">AI 시그널 PRO</span>
+    <span class="nav-badge">AI ìê·¸ë PRO</span>
     <div class="nav-user" id="nav-user" style="display:none">
       <img id="nav-avatar" src="" alt="">
       <span id="nav-name"></span>
-      <button class="btn-outline" id="nav-logout">로그아웃</button>
+      <button class="btn-outline" id="nav-logout">ë¡ê·¸ìì</button>
     </div>
   </div>
 </nav>
 
-<!-- ══════════════════════════════════════════════════════
-     대시보드 본문
-══════════════════════════════════════════════════════ -->
+<!-- ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+     ëìë³´ë ë³¸ë¬¸
+ââââââââââââââââââââââââââââââââââââââââââââââââââââââ -->
 <div class="container" id="dashboard-body" style="display:none">
 
-  <!-- 헤더 -->
+  <!-- í¤ë -->
   <div style="margin: 16px 0 28px">
     <h1 style="font-size:22px;font-weight:700">
-      🇰🇷 AI 시그널 대시보드
+      ð°ð· AI ìê·¸ë ëìë³´ë
       <span style="font-size:13px;background:#1a1a1a;border:1px solid #333;padding:3px 10px;border-radius:20px;margin-left:8px;color:var(--muted)">PRO v3.0</span>
     </h1>
     <p id="dashboard-timestamp" style="color:var(--muted);font-size:13px;margin-top:6px"></p>
   </div>
 
-  <!-- 시그널 요약 -->
-  <div class="sec-title">🎯 오늘의 시그널 요약</div>
+  <!-- ìê·¸ë ìì½ -->
+  <div class="sec-title">ð¯ ì¤ëì ìê·¸ë ìì½</div>
   <div class="summary-row" id="summary-row"></div>
 
-  <!-- TOP 매수 / 매도 -->
-  <div class="sec-title">🏆 TOP 매수 후보</div>
+  <!-- TOP ë§¤ì / ë§¤ë -->
+  <div class="sec-title">ð TOP ë§¤ì íë³´</div>
   <div class="picks-row" id="buy-picks"></div>
-  <div class="sec-title" style="margin-top:20px">⚠️ TOP 매도 경고</div>
+  <div class="sec-title" style="margin-top:20px">â ï¸ TOP ë§¤ë ê²½ê³ </div>
   <div class="picks-row" id="sell-picks"></div>
 
-  <!-- 전종목 스캐너 -->
+  <!-- ì ì¢ëª© ì¤ìºë -->
   <div class="sec-title" style="margin-top:24px">
-    📊 전종목 시그널 스캐너
-    <small style="color:var(--muted);font-size:11px;font-weight:400">(행 클릭 → 차트 상세)</small>
+    ð ì ì¢ëª© ìê·¸ë ì¤ìºë
+    <small style="color:var(--muted);font-size:11px;font-weight:400">(í í´ë¦­ â ì°¨í¸ ìì¸)</small>
   </div>
   <div class="table-wrap">
     <table>
       <thead>
         <tr>
-          <th>종목</th><th>현재가</th><th>종합점수</th>
-          <th>RSI</th><th>스토캐스틱</th><th>볼린저%B</th><th>거래량</th>
-          <th>시그널</th><th>손절 / 목표가</th>
+          <th>ì¢ëª©</th><th>íì¬ê°</th><th>ì¢í©ì ì</th>
+          <th>RSI</th><th>ì¤í ìºì¤í±</th><th>ë³¼ë¦°ì %B</th><th>ê±°ëë</th>
+          <th>ìê·¸ë</th><th>ìì  / ëª©íê°</th>
         </tr>
       </thead>
       <tbody id="scanner-tbody"></tbody>
     </table>
   </div>
 
-  <!-- DART 공시 -->
-  <div class="sec-title">📰 DART 오늘의 공시</div>
+  <!-- DART ê³µì -->
+  <div class="sec-title">ð° DART ì¤ëì ê³µì</div>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>구분</th><th>기업</th><th>공시 내용</th><th>일자</th></tr></thead>
+      <thead><tr><th>êµ¬ë¶</th><th>ê¸°ì</th><th>ê³µì ë´ì©</th><th>ì¼ì</th></tr></thead>
       <tbody id="dart-tbody"></tbody>
     </table>
   </div>
 
-  <!-- 뉴스 시나리오 분석 v3 — 자동수집 -->
-  <div class="sec-title">🤖 실시간 뉴스 자동수집 분석</div>
+  <!-- ë´ì¤ ìëë¦¬ì¤ ë¶ì v3 â ìëìì§ -->
+  <div class="sec-title">ð¤ ì¤ìê° ë´ì¤ ìëìì§ ë¶ì</div>
   <div class="news-box">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
       <div>
-        <span id="news-status" style="font-size:13px;color:var(--muted)">📡 뉴스 자동 수집 중...</span>
+        <span id="news-status" style="font-size:13px;color:var(--muted)">ð¡ ë´ì¤ ìë ìì§ ì¤...</span>
         <span id="news-update-time" style="font-size:11px;color:#444;margin-left:10px"></span>
       </div>
-      <button class="news-btn" onclick="autoFetchNews()" style="margin-top:0;padding:7px 16px;font-size:12px">🔄 새로고침</button>
+      <button class="news-btn" onclick="autoFetchNews()" style="margin-top:0;padding:7px 16px;font-size:12px">ð ìë¡ê³ ì¹¨</button>
     </div>
 
-    <!-- 시장 무드 게이지 -->
+    <!-- ìì¥ ë¬´ë ê²ì´ì§ -->
     <div id="market-mood" style="display:none;background:var(--card2);border-radius:10px;padding:14px;margin-bottom:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <span style="font-size:13px;font-weight:600">📊 시장 무드 지수</span>
+        <span style="font-size:13px;font-weight:600">ð ìì¥ ë¬´ë ì§ì</span>
         <span id="mood-label" style="font-size:14px;font-weight:700"></span>
       </div>
       <div style="background:#2a2a2a;border-radius:6px;height:8px;overflow:hidden;position:relative">
@@ -301,43 +302,43 @@ footer {
         <div id="mood-mask-right" style="position:absolute;top:0;right:0;height:8px;background:var(--card2);transition:width .6s"></div>
       </div>
       <div style="display:flex;justify-content:space-between;margin-top:4px">
-        <span style="font-size:10px;color:#555">극도 비관</span>
-        <span style="font-size:10px;color:#555">극도 낙관</span>
+        <span style="font-size:10px;color:#555">ê·¹ë ë¹ê´</span>
+        <span style="font-size:10px;color:#555">ê·¹ë ëê´</span>
       </div>
     </div>
 
-    <!-- 자동 수집 뉴스 피드 -->
+    <!-- ìë ìì§ ë´ì¤ í¼ë -->
     <div id="auto-news-feed"></div>
 
-    <!-- 에이전트 자동 분석 결과 -->
+    <!-- ìì´ì í¸ ìë ë¶ì ê²°ê³¼ -->
     <div class="news-out" id="news-out"></div>
 
-    <!-- 수동 입력 접기/펼치기 -->
+    <!-- ìë ìë ¥ ì ê¸°/í¼ì¹ê¸° -->
     <div style="margin-top:14px">
       <button onclick="toggleManualInput()" style="background:none;border:none;color:#444;font-size:11px;cursor:pointer;text-decoration:underline">
-        ✏️ 뉴스 직접 입력하기
+        âï¸ ë´ì¤ ì§ì  ìë ¥íê¸°
       </button>
       <div id="manual-input-area" style="display:none;margin-top:10px">
         <textarea class="news-input" id="news-input"
-          placeholder="예) 미국 연준 금리 동결 결정 / 삼성전자 HBM 공급 계약..."></textarea>
-        <button class="news-btn" onclick="runManualAgents()">🤖 분석 시작</button>
+          placeholder="ì) ë¯¸êµ­ ì°ì¤ ê¸ë¦¬ ëê²° ê²°ì  / ì¼ì±ì ì HBM ê³µê¸ ê³ì½..."></textarea>
+        <button class="news-btn" onclick="runManualAgents()">ð¤ ë¶ì ìì</button>
       </div>
     </div>
   </div>
 
 </div><!-- /container -->
 
-<!-- ══════════════════════════════════════════════════════
-     상세 차트 모달
-══════════════════════════════════════════════════════ -->
+<!-- ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+     ìì¸ ì°¨í¸ ëª¨ë¬
+ââââââââââââââââââââââââââââââââââââââââââââââââââââââ -->
 <div class="modal-overlay" id="modal">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal()">✕</button>
+    <button class="modal-close" onclick="closeModal()">â</button>
     <h2 id="modal-title" style="margin-bottom:16px;font-size:18px"></h2>
     <div class="tab-row">
-      <button class="tab active" onclick="switchTab('price',this)">📈 가격 + 볼린저</button>
+      <button class="tab active" onclick="switchTab('price',this)">ð ê°ê²© + ë³¼ë¦°ì </button>
       <button class="tab" onclick="switchTab('rsi',this)">RSI</button>
-      <button class="tab" onclick="switchTab('vol',this)">📊 거래량</button>
+      <button class="tab" onclick="switchTab('vol',this)">ð ê±°ëë</button>
     </div>
     <div id="tab-price"><canvas id="chart-price" height="220"></canvas></div>
     <div id="tab-rsi"  style="display:none"><canvas id="chart-rsi"   height="200"></canvas></div>
@@ -347,19 +348,19 @@ footer {
 </div>
 
 <footer>
-  ⚠️ 이 대시보드는 투자 참고용입니다. 모든 투자 결정과 책임은 본인에게 있습니다. 과거 데이터가 미래 수익을 보장하지 않습니다.
+  â ï¸ ì´ ëìë³´ëë í¬ì ì°¸ê³ ì©ìëë¤. ëª¨ë  í¬ì ê²°ì ê³¼ ì±ìì ë³¸ì¸ìê² ììµëë¤. ê³¼ê±° ë°ì´í°ê° ë¯¸ë ììµì ë³´ì¥íì§ ììµëë¤.
 </footer>
 
-<!-- ══════════════════════════════════════════════════════
+<!-- ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
      Firebase SDK
-══════════════════════════════════════════════════════ -->
+ââââââââââââââââââââââââââââââââââââââââââââââââââââââ -->
 <script type="module">
 import { initializeApp }          from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged }
+import { getAuth, signInWithCredential, GoogleAuthProvider, signOut, onAuthStateChanged }
                                    from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
-// ── Firebase 설정 (기존 Executive Signal과 동일) ──────────────────
+// ââ Firebase ì¤ì  (ê¸°ì¡´ Executive Signalê³¼ ëì¼) ââââââââââââââââââ
 const firebaseConfig = {
   apiKey:            "AIzaSyCq2Tzk2-hhXDBu8bu-uxNozJPZ4NrtoSw",
   authDomain:        "insider-66472.firebaseapp.com",
@@ -374,14 +375,14 @@ const auth     = getAuth(app);
 const db       = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// ── 구독 상태 확인 (Firestore subscribers/{uid}) ──────────────────
+// ââ êµ¬ë ìí íì¸ (Firestore subscribers/{uid}) ââââââââââââââââââ
 async function checkSubscription(uid) {
   try {
     const ref  = doc(db, "subscribers", uid);
     const snap = await getDoc(ref);
     if (!snap.exists()) return false;
     const data = snap.data();
-    // status: 'active' 이고 만료일이 미래이면 유효
+    // status: 'active' ì´ê³  ë§ë£ì¼ì´ ë¯¸ëì´ë©´ ì í¨
     if (data.status !== 'active') return false;
     if (data.expiresAt) {
       const exp = data.expiresAt.toDate ? data.expiresAt.toDate() : new Date(data.expiresAt);
@@ -389,13 +390,13 @@ async function checkSubscription(uid) {
     }
     return true;
   } catch (e) {
-    console.warn("구독 확인 오류:", e);
-    // Firestore 미설정 시 n8n으로 fallback
+    console.warn("êµ¬ë íì¸ ì¤ë¥:", e);
+    // Firestore ë¯¸ì¤ì  ì n8nì¼ë¡ fallback
     return await checkSubscriptionN8n(uid);
   }
 }
 
-// ── n8n fallback: 구독 상태 확인 ─────────────────────────────────
+// ââ n8n fallback: êµ¬ë ìí íì¸ âââââââââââââââââââââââââââââââââ
 async function checkSubscriptionN8n(uid) {
   try {
     const resp = await fetch(
@@ -410,7 +411,7 @@ async function checkSubscriptionN8n(uid) {
   }
 }
 
-// ── 인증 상태 감지 → 접근 제어 ───────────────────────────────────
+// ââ ì¸ì¦ ìí ê°ì§ â ì ê·¼ ì ì´ âââââââââââââââââââââââââââââââââââ
 onAuthStateChanged(auth, async (user) => {
   const loading   = document.getElementById("gate-loading");
   const gateLogin = document.getElementById("gate-login");
@@ -423,47 +424,63 @@ onAuthStateChanged(auth, async (user) => {
   loading.classList.remove("show");
 
   if (!user) {
-    // 로그인 안 됨
+    // ë¡ê·¸ì¸ ì ë¨
     gateLogin.classList.add("show");
     return;
   }
 
-  // 로그인 됨 → 구독 확인
+  // ë¡ê·¸ì¸ ë¨ â êµ¬ë íì¸
   const isSubscribed = await checkSubscription(user.uid);
 
   if (!isSubscribed) {
     gateSub.classList.add("show");
-    // 로그아웃 버튼 연결
+    // ë¡ê·¸ìì ë²í¼ ì°ê²°
     document.getElementById("gate-logout-btn").onclick = () => signOut(auth);
     return;
   }
 
-  // 구독 확인 완료 → 대시보드 표시
+  // êµ¬ë íì¸ ìë£ â ëìë³´ë íì
   navUser.style.display   = "flex";
   navAvatar.src           = user.photoURL || "";
   navName.textContent     = user.displayName || user.email;
   dashboard.style.display = "block";
 
   document.getElementById("dashboard-timestamp").textContent =
-    `${new Date().toLocaleString("ko-KR")} 기준  |  ${user.displayName || user.email} 님 환영합니다`;
+    `${new Date().toLocaleString("ko-KR")} ê¸°ì¤  |  ${user.displayName || user.email} ë íìí©ëë¤`;
 
   initDashboard();
 });
 
-// ── 로그인 버튼 ──────────────────────────────────────────────────
-document.getElementById("gate-login-btn").onclick  = () =>
-  signInWithPopup(auth, provider).catch(e => console.error("popup error:", e));
+// ââ ë¡ê·¸ì¸ ë²í¼ ââââââââââââââââââââââââââââââââââââââââââââââââââ
+document.getElementById("gate-login-btn").onclick = () => {
+  if (typeof google === 'undefined' || !google.accounts) {
+    console.error("Google Identity Services not loaded");
+    return;
+  }
+  const tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: '729919164559-259m9uhs1vv8qv4939ko8gu4d4behu4i.apps.googleusercontent.com',
+    scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile openid',
+    prompt: 'select_account',
+    callback: async (tokenResponse) => {
+      if (tokenResponse && tokenResponse.access_token) {
+        const credential = GoogleAuthProvider.credential(null, tokenResponse.access_token);
+        signInWithCredential(auth, credential).catch(e => console.error('signIn error:', e));
+      }
+    }
+  });
+  tokenClient.requestAccessToken();
+};
 document.getElementById("nav-logout").onclick      = () => signOut(auth);
 </script>
 
-<!-- ══════════════════════════════════════════════════════
-     대시보드 로직 (Chart.js + 샘플 데이터)
-══════════════════════════════════════════════════════ -->
+<!-- ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+     ëìë³´ë ë¡ì§ (Chart.js + ìí ë°ì´í°)
+ââââââââââââââââââââââââââââââââââââââââââââââââââââââ -->
 <script>
 Chart.defaults.color       = "#888";
 Chart.defaults.borderColor = "#2a2a2a";
 
-// ── 샘플 데이터 생성 헬퍼 ─────────────────────────────────────────
+// ââ ìí ë°ì´í° ìì± í¬í¼ âââââââââââââââââââââââââââââââââââââââââ
 function rndPrices(base, n=60) {
   const a=[base];
   for(let i=1;i<n;i++) a.push(Math.round(a[i-1]*(1+(Math.random()-.48)*.022)));
@@ -486,50 +503,50 @@ function rndVol(base,n=60) { return Array.from({length:n},()=>Math.round(base*(0
 
 const DATES = rndDates();
 
-// ── 종목 데이터 (실제 스크립트 실행 시 Python 데이터로 교체) ───────
+// ââ ì¢ëª© ë°ì´í° (ì¤ì  ì¤í¬ë¦½í¸ ì¤í ì Python ë°ì´í°ë¡ êµì²´) âââââââ
 const STOCKS = [
-  {name:"SK하이닉스",    t:"000660.KS", price:"198,500", chg:+2.34, score:88, sig:"강력매수", col:"#22c55e", icon:"🔥", rsi:27.4, stoch:18, bbp:0.08, vs:3.2, stop:"186,200", tgt1:"210,800", tgt2:"223,100"},
-  {name:"에코프로비엠",  t:"247540.KQ", price:"127,800", chg:+1.73, score:82, sig:"강력매수", col:"#22c55e", icon:"🔥", rsi:29.8, stoch:22, bbp:0.12, vs:2.8, stop:"119,400", tgt1:"136,200", tgt2:"144,600"},
-  {name:"삼성전자",      t:"005930.KS", price:"74,200",  chg:+1.12, score:71, sig:"매수",     col:"#4ade80", icon:"📈", rsi:38.7, stoch:34, bbp:0.21, vs:1.9, stop:"69,800",  tgt1:"78,600",  tgt2:"83,000"},
-  {name:"현대차",        t:"005380.KS", price:"214,000", chg:+0.94, score:68, sig:"매수",     col:"#4ade80", icon:"📈", rsi:41.2, stoch:38, bbp:0.27, vs:1.6, stop:"201,000", tgt1:"227,000", tgt2:"240,000"},
-  {name:"KB금융",        t:"105560.KS", price:"88,400",  chg:+0.57, score:65, sig:"매수",     col:"#4ade80", icon:"📈", rsi:43.5, stoch:41, bbp:0.31, vs:1.4, stop:"83,200",  tgt1:"93,600",  tgt2:"98,800"},
-  {name:"기아",          t:"000270.KS", price:"98,600",  chg:-0.20, score:62, sig:"매수",     col:"#4ade80", icon:"📈", rsi:44.1, stoch:43, bbp:0.34, vs:1.3, stop:"92,400",  tgt1:"104,800", tgt2:"111,000"},
-  {name:"셀트리온",      t:"068270.KS", price:"168,200", chg:+0.12, score:52, sig:"중립",     col:"#f0b429", icon:"➡️",  rsi:52.3, stoch:51, bbp:0.48, vs:1.1, stop:"158,000", tgt1:"178,400", tgt2:"188,600"},
-  {name:"신한지주",      t:"055550.KS", price:"52,300",  chg:-0.38, score:49, sig:"중립",     col:"#f0b429", icon:"➡️",  rsi:54.0, stoch:53, bbp:0.52, vs:1.0, stop:"49,100",  tgt1:"55,500",  tgt2:"58,700"},
-  {name:"레인보우로보틱스",t:"277810.KQ",price:"43,500",  chg:-0.68, score:47, sig:"중립",     col:"#f0b429", icon:"➡️",  rsi:55.8, stoch:55, bbp:0.55, vs:0.9, stop:"40,800",  tgt1:"46,200",  tgt2:"48,900"},
-  {name:"카카오게임즈",  t:"293490.KQ", price:"18,750",  chg:-1.05, score:44, sig:"중립",     col:"#f0b429", icon:"➡️",  rsi:57.2, stoch:58, bbp:0.59, vs:0.8, stop:"17,600",  tgt1:"19,900",  tgt2:"21,100"},
-  {name:"POSCO홀딩스",   t:"005490.KS", price:"302,000", chg:-1.32, score:34, sig:"매도",     col:"#f87171", icon:"📉", rsi:62.4, stoch:66, bbp:0.72, vs:0.7, stop:"284,000", tgt1:"320,000", tgt2:"338,000"},
-  {name:"삼성바이오로직스",t:"207940.KS",price:"892,000", chg:-0.89, score:31, sig:"매도",     col:"#f87171", icon:"📉", rsi:64.1, stoch:68, bbp:0.75, vs:0.6, stop:"838,000", tgt1:"946,000", tgt2:"1,000,000"},
-  {name:"LG에너지솔루션",t:"373220.KS", price:"314,500", chg:-1.56, score:28, sig:"매도",     col:"#f87171", icon:"📉", rsi:65.8, stoch:71, bbp:0.78, vs:0.5, stop:"296,000", tgt1:"333,000", tgt2:"351,500"},
-  {name:"HLB",           t:"028300.KQ", price:"78,400",  chg:-2.48, score:18, sig:"강력매도", col:"#ef4444", icon:"⚠️", rsi:72.4, stoch:78, bbp:0.88, vs:0.4, stop:"73,600",  tgt1:"83,200",  tgt2:"88,000"},
-  {name:"클래시스",      t:"214150.KQ", price:"31,200",  chg:-3.12, score:14, sig:"강력매도", col:"#ef4444", icon:"⚠️", rsi:75.1, stoch:82, bbp:0.92, vs:0.3, stop:"29,300",  tgt1:"33,100",  tgt2:"35,000"},
+  {name:"SKíì´ëì¤",    t:"000660.KS", price:"198,500", chg:+2.34, score:88, sig:"ê°ë ¥ë§¤ì", col:"#22c55e", icon:"ð¥", rsi:27.4, stoch:18, bbp:0.08, vs:3.2, stop:"186,200", tgt1:"210,800", tgt2:"223,100"},
+  {name:"ìì½íë¡ë¹ì ",  t:"247540.KQ", price:"127,800", chg:+1.73, score:82, sig:"ê°ë ¥ë§¤ì", col:"#22c55e", icon:"ð¥", rsi:29.8, stoch:22, bbp:0.12, vs:2.8, stop:"119,400", tgt1:"136,200", tgt2:"144,600"},
+  {name:"ì¼ì±ì ì",      t:"005930.KS", price:"74,200",  chg:+1.12, score:71, sig:"ë§¤ì",     col:"#4ade80", icon:"ð", rsi:38.7, stoch:34, bbp:0.21, vs:1.9, stop:"69,800",  tgt1:"78,600",  tgt2:"83,000"},
+  {name:"íëì°¨",        t:"005380.KS", price:"214,000", chg:+0.94, score:68, sig:"ë§¤ì",     col:"#4ade80", icon:"ð", rsi:41.2, stoch:38, bbp:0.27, vs:1.6, stop:"201,000", tgt1:"227,000", tgt2:"240,000"},
+  {name:"KBê¸ìµ",        t:"105560.KS", price:"88,400",  chg:+0.57, score:65, sig:"ë§¤ì",     col:"#4ade80", icon:"ð", rsi:43.5, stoch:41, bbp:0.31, vs:1.4, stop:"83,200",  tgt1:"93,600",  tgt2:"98,800"},
+  {name:"ê¸°ì",          t:"000270.KS", price:"98,600",  chg:-0.20, score:62, sig:"ë§¤ì",     col:"#4ade80", icon:"ð", rsi:44.1, stoch:43, bbp:0.34, vs:1.3, stop:"92,400",  tgt1:"104,800", tgt2:"111,000"},
+  {name:"ìí¸ë¦¬ì¨",      t:"068270.KS", price:"168,200", chg:+0.12, score:52, sig:"ì¤ë¦½",     col:"#f0b429", icon:"â¡ï¸",  rsi:52.3, stoch:51, bbp:0.48, vs:1.1, stop:"158,000", tgt1:"178,400", tgt2:"188,600"},
+  {name:"ì íì§ì£¼",      t:"055550.KS", price:"52,300",  chg:-0.38, score:49, sig:"ì¤ë¦½",     col:"#f0b429", icon:"â¡ï¸",  rsi:54.0, stoch:53, bbp:0.52, vs:1.0, stop:"49,100",  tgt1:"55,500",  tgt2:"58,700"},
+  {name:"ë ì¸ë³´ì°ë¡ë³´í±ì¤",t:"277810.KQ",price:"43,500",  chg:-0.68, score:47, sig:"ì¤ë¦½",     col:"#f0b429", icon:"â¡ï¸",  rsi:55.8, stoch:55, bbp:0.55, vs:0.9, stop:"40,800",  tgt1:"46,200",  tgt2:"48,900"},
+  {name:"ì¹´ì¹´ì¤ê²ìì¦",  t:"293490.KQ", price:"18,750",  chg:-1.05, score:44, sig:"ì¤ë¦½",     col:"#f0b429", icon:"â¡ï¸",  rsi:57.2, stoch:58, bbp:0.59, vs:0.8, stop:"17,600",  tgt1:"19,900",  tgt2:"21,100"},
+  {name:"POSCOíë©ì¤",   t:"005490.KS", price:"302,000", chg:-1.32, score:34, sig:"ë§¤ë",     col:"#f87171", icon:"ð", rsi:62.4, stoch:66, bbp:0.72, vs:0.7, stop:"284,000", tgt1:"320,000", tgt2:"338,000"},
+  {name:"ì¼ì±ë°ì´ì¤ë¡ì§ì¤",t:"207940.KS",price:"892,000", chg:-0.89, score:31, sig:"ë§¤ë",     col:"#f87171", icon:"ð", rsi:64.1, stoch:68, bbp:0.75, vs:0.6, stop:"838,000", tgt1:"946,000", tgt2:"1,000,000"},
+  {name:"LGìëì§ìë£¨ì",t:"373220.KS", price:"314,500", chg:-1.56, score:28, sig:"ë§¤ë",     col:"#f87171", icon:"ð", rsi:65.8, stoch:71, bbp:0.78, vs:0.5, stop:"296,000", tgt1:"333,000", tgt2:"351,500"},
+  {name:"HLB",           t:"028300.KQ", price:"78,400",  chg:-2.48, score:18, sig:"ê°ë ¥ë§¤ë", col:"#ef4444", icon:"â ï¸", rsi:72.4, stoch:78, bbp:0.88, vs:0.4, stop:"73,600",  tgt1:"83,200",  tgt2:"88,000"},
+  {name:"í´ëìì¤",      t:"214150.KQ", price:"31,200",  chg:-3.12, score:14, sig:"ê°ë ¥ë§¤ë", col:"#ef4444", icon:"â ï¸", rsi:75.1, stoch:82, bbp:0.92, vs:0.3, stop:"29,300",  tgt1:"33,100",  tgt2:"35,000"},
 ];
 
 const DART_DATA = [
-  {impact:"📈 호재", corp:"삼성전자",       title:"자기주식 취득 결정 (2,000억원)",           date:"2026.03.19", col:"#22c55e"},
-  {impact:"📈 호재", corp:"SK하이닉스",     title:"HBM4 주요 AI기업 공급계약 체결",           date:"2026.03.19", col:"#22c55e"},
-  {impact:"📈 호재", corp:"현대차",         title:"2026년 1분기 영업이익 상향 공시",           date:"2026.03.18", col:"#22c55e"},
-  {impact:"📉 악재", corp:"LG에너지솔루션", title:"유상증자 결정 (1조원, 주식수 3% 희석)",     date:"2026.03.18", col:"#ef4444"},
-  {impact:"📉 악재", corp:"HLB",           title:"임상시험 결과 발표 지연 공시",              date:"2026.03.18", col:"#ef4444"},
-  {impact:"📌 공시", corp:"에코프로비엠",   title:"대규모 신규 설비투자 계획 공시",            date:"2026.03.17", col:"#888"},
+  {impact:"ð í¸ì¬", corp:"ì¼ì±ì ì",       title:"ìê¸°ì£¼ì ì·¨ë ê²°ì  (2,000ìµì)",           date:"2026.03.19", col:"#22c55e"},
+  {impact:"ð í¸ì¬", corp:"SKíì´ëì¤",     title:"HBM4 ì£¼ì AIê¸°ì ê³µê¸ê³ì½ ì²´ê²°",           date:"2026.03.19", col:"#22c55e"},
+  {impact:"ð í¸ì¬", corp:"íëì°¨",         title:"2026ë 1ë¶ê¸° ììì´ìµ ìí¥ ê³µì",           date:"2026.03.18", col:"#22c55e"},
+  {impact:"ð ìì¬", corp:"LGìëì§ìë£¨ì", title:"ì ìì¦ì ê²°ì  (1ì¡°ì, ì£¼ìì 3% í¬ì)",     date:"2026.03.18", col:"#ef4444"},
+  {impact:"ð ìì¬", corp:"HLB",           title:"ìììí ê²°ê³¼ ë°í ì§ì° ê³µì",              date:"2026.03.18", col:"#ef4444"},
+  {impact:"ð ê³µì", corp:"ìì½íë¡ë¹ì ",   title:"ëê·ëª¨ ì ê· ì¤ë¹í¬ì ê³í ê³µì",            date:"2026.03.17", col:"#888"},
 ];
 
-// ── 대시보드 초기화 ──────────────────────────────────────────────
+// ââ ëìë³´ë ì´ê¸°í ââââââââââââââââââââââââââââââââââââââââââââââ
 function bar(v, mx, col) {
   const p = Math.min(v/mx*100,100).toFixed(0);
   return `<div class="bar-wrap"><div class="bar-fill" style="background:${col};width:${p}%"></div></div>`;
 }
 
 function initDashboard() {
-  // 시그널 요약
+  // ìê·¸ë ìì½
   const cnt = {};
   STOCKS.forEach(s => cnt[s.sig] = (cnt[s.sig]||0)+1);
   const summaryDef = [
-    {label:"🔥 강력매수", key:"강력매수", col:"#22c55e"},
-    {label:"📈 매수",     key:"매수",     col:"#4ade80"},
-    {label:"➡️ 중립",     key:"중립",     col:"#f0b429"},
-    {label:"📉 매도",     key:"매도",     col:"#f87171"},
-    {label:"⚠️ 강력매도", key:"강력매도", col:"#ef4444"},
+    {label:"ð¥ ê°ë ¥ë§¤ì", key:"ê°ë ¥ë§¤ì", col:"#22c55e"},
+    {label:"ð ë§¤ì",     key:"ë§¤ì",     col:"#4ade80"},
+    {label:"â¡ï¸ ì¤ë¦½",     key:"ì¤ë¦½",     col:"#f0b429"},
+    {label:"ð ë§¤ë",     key:"ë§¤ë",     col:"#f87171"},
+    {label:"â ï¸ ê°ë ¥ë§¤ë", key:"ê°ë ¥ë§¤ë", col:"#ef4444"},
   ];
   document.getElementById("summary-row").innerHTML = summaryDef.map(d=>
     `<div class="chip">
@@ -538,7 +555,7 @@ function initDashboard() {
     </div>`
   ).join("");
 
-  // TOP 피킹 카드
+  // TOP í¼í¹ ì¹´ë
   const sorted = [...STOCKS].sort((a,b)=>b.score-a.score);
   document.getElementById("buy-picks").innerHTML =
     sorted.slice(0,5).map((s,i)=>
@@ -546,7 +563,7 @@ function initDashboard() {
         <div class="pick-rank">#${i+1} ${s.sig}</div>
         <div class="pick-name">${s.name}</div>
         <div class="pick-score" style="color:${s.col}">${s.score}</div>
-        <div class="pick-sub">종합점수 / 100</div>
+        <div class="pick-sub">ì¢í©ì ì / 100</div>
       </div>`
     ).join("");
   document.getElementById("sell-picks").innerHTML =
@@ -555,11 +572,11 @@ function initDashboard() {
         <div class="pick-rank">#${i+1} ${s.sig}</div>
         <div class="pick-name">${s.name}</div>
         <div class="pick-score" style="color:${s.col}">${s.score}</div>
-        <div class="pick-sub">종합점수 / 100</div>
+        <div class="pick-sub">ì¢í©ì ì / 100</div>
       </div>`
     ).join("");
 
-  // 스캐너 테이블
+  // ì¤ìºë íì´ë¸
   const tbody = document.getElementById("scanner-tbody");
   sorted.forEach(s => {
     const cc = s.chg>=0?"#22c55e":"#ef4444";
@@ -573,7 +590,7 @@ function initDashboard() {
     tr.onclick = () => openModal(s);
     tr.innerHTML = `
       <td><strong>${s.name}</strong><br><small style="color:#555">${s.t}</small></td>
-      <td>₩${s.price}<br><span style="color:${cc};font-size:12px">${cs}${s.chg}%</span></td>
+      <td>â©${s.price}<br><span style="color:${cc};font-size:12px">${cs}${s.chg}%</span></td>
       <td style="min-width:80px">
         <span style="color:${sc_c};font-weight:700;font-size:18px">${s.score}</span>
         <span style="color:#555;font-size:10px">/100</span>
@@ -585,14 +602,14 @@ function initDashboard() {
       <td><span style="color:${vc}">${s.vs}x</span>${bar(Math.min(s.vs,5),5,"#f0b429")}</td>
       <td><span class="sig-badge" style="background:${s.col};color:${s.score>=65?'#000':'#fff'}">${s.icon} ${s.sig}</span></td>
       <td style="font-size:12px;line-height:2">
-        <span style="color:#ef4444">손절 ₩${s.stop}</span><br>
-        <span style="color:#4ade80">목표1 ₩${s.tgt1}</span><br>
-        <span style="color:#22c55e">목표2 ₩${s.tgt2}</span>
+        <span style="color:#ef4444">ìì  â©${s.stop}</span><br>
+        <span style="color:#4ade80">ëª©í1 â©${s.tgt1}</span><br>
+        <span style="color:#22c55e">ëª©í2 â©${s.tgt2}</span>
       </td>`;
     tbody.appendChild(tr);
   });
 
-  // DART 공시
+  // DART ê³µì
   const dart = document.getElementById("dart-tbody");
   DART_DATA.forEach(d => {
     const tr = document.createElement("tr");
@@ -604,38 +621,38 @@ function initDashboard() {
     dart.appendChild(tr);
   });
 
-  // v3: 뉴스 자동수집 분석 
+  // v3: ë´ì¤ ìëìì§ ë¶ì 
   autoFetchNews();
 }
 
-// ── 상세 모달 차트 ────────────────────────────────────────────────
+// ââ ìì¸ ëª¨ë¬ ì°¨í¸ ââââââââââââââââââââââââââââââââââââââââââââââââ
 let C1, C2, C3;
 function openModal(s) {
   document.getElementById("modal-title").textContent =
-    `${s.name} (${s.t})  ·  종합점수 ${s.score}/100`;
+    `${s.name} (${s.t})  Â·  ì¢í©ì ì ${s.score}/100`;
   document.getElementById("modal").classList.add("open");
 
   document.getElementById("strat-row").innerHTML = `
     <div class="strat-card">
-      <div class="strat-label">🔴 손절가</div>
-      <div class="strat-val" style="color:#ef4444">₩${s.stop}</div>
+      <div class="strat-label">ð´ ìì ê°</div>
+      <div class="strat-val" style="color:#ef4444">â©${s.stop}</div>
     </div>
     <div class="strat-card">
-      <div class="strat-label">🟡 목표가 1</div>
-      <div class="strat-val" style="color:#4ade80">₩${s.tgt1}</div>
+      <div class="strat-label">ð¡ ëª©íê° 1</div>
+      <div class="strat-val" style="color:#4ade80">â©${s.tgt1}</div>
     </div>
     <div class="strat-card">
-      <div class="strat-label">🟢 목표가 2</div>
-      <div class="strat-val" style="color:#22c55e">₩${s.tgt2}</div>
+      <div class="strat-label">ð¢ ëª©íê° 2</div>
+      <div class="strat-val" style="color:#22c55e">â©${s.tgt2}</div>
     </div>`;
 
   if(C1) C1.destroy(); if(C2) C2.destroy(); if(C3) C3.destroy();
   const pr = rndPrices(parseInt(s.price.replace(/,/g,"")));
   C1 = new Chart(document.getElementById("chart-price"), {
     data: { labels: DATES, datasets: [
-      {type:"line", label:"종가",      data:pr,                  borderColor:s.col,              borderWidth:2, pointRadius:0, tension:0.3, fill:false},
-      {type:"line", label:"볼린저상단",data:pr.map(v=>Math.round(v*1.04)), borderColor:"rgba(239,68,68,.5)",  borderWidth:1, borderDash:[4,4], pointRadius:0, fill:false},
-      {type:"line", label:"볼린저하단",data:pr.map(v=>Math.round(v*0.96)), borderColor:"rgba(34,197,94,.5)",  borderWidth:1, borderDash:[4,4], pointRadius:0, fill:false},
+      {type:"line", label:"ì¢ê°",      data:pr,                  borderColor:s.col,              borderWidth:2, pointRadius:0, tension:0.3, fill:false},
+      {type:"line", label:"ë³¼ë¦°ì ìë¨",data:pr.map(v=>Math.round(v*1.04)), borderColor:"rgba(239,68,68,.5)",  borderWidth:1, borderDash:[4,4], pointRadius:0, fill:false},
+      {type:"line", label:"ë³¼ë¦°ì íë¨",data:pr.map(v=>Math.round(v*0.96)), borderColor:"rgba(34,197,94,.5)",  borderWidth:1, borderDash:[4,4], pointRadius:0, fill:false},
     ]},
     options: { responsive:true, plugins:{legend:{labels:{color:"#aaa",boxWidth:12}}},
       scales:{ x:{ticks:{maxRotation:0,color:"#555"},grid:{color:"#1e1e1e"}},
@@ -654,7 +671,7 @@ function openModal(s) {
   });
   C3 = new Chart(document.getElementById("chart-vol"), {
     type:"bar",
-    data: { labels:DATES, datasets:[{label:"거래량", data:rndVol(1000000),
+    data: { labels:DATES, datasets:[{label:"ê±°ëë", data:rndVol(1000000),
       backgroundColor:"rgba(240,180,41,.35)", borderColor:"#f0b429", borderWidth:1}] },
     options: { responsive:true, plugins:{legend:{labels:{color:"#aaa",boxWidth:12}}},
       scales:{ x:{ticks:{maxRotation:0,color:"#555"},grid:{color:"#1e1e1e"}},
@@ -670,85 +687,85 @@ function switchTab(n, b) {
   b.classList.add("active");
 }
 
-// ── 뉴스 자동수집 분석 (v3) ──────────────────────────────────────
+// ââ ë´ì¤ ìëìì§ ë¶ì (v3) ââââââââââââââââââââââââââââââââââââââ
 const MACRO = [
-  {kw:["금리 인하","금리인하","피벗"], r:"📉 금리 인하 → 할인율 하락으로 성장주·2차전지 밸류에이션 상승 기대. KOSPI 전반 긍정적."},
-  {kw:["금리 인상","금리인상"],        r:"📈 금리 인상 → 성장주 부담 증가. 금융주(KB금융·신한지주) 상대적 수혜."},
-  {kw:["환율","달러","원달러"],        r:"💱 원화 약세 시 수출주(삼성전자·현대차) 수혜. 내수·바이오 부담 증가."},
-  {kw:["중국","경기침체","침체"],      r:"⚠️ 중국 경기 둔화 → 철강(POSCO)·자동차 수출 부정적. 외국인 매도 압력."},
-  {kw:["관세","무역전쟁","트럼프"],    r:"⚠️ 무역 갈등 → 수출 의존도 높은 종목 리스크. 반도체·자동차 영향 모니터링."},
+  {kw:["ê¸ë¦¬ ì¸í","ê¸ë¦¬ì¸í","í¼ë²"], r:"ð ê¸ë¦¬ ì¸í â í ì¸ì¨ íë½ì¼ë¡ ì±ì¥ì£¼Â·2ì°¨ì ì§ ë°¸ë¥ìì´ì ìì¹ ê¸°ë. KOSPI ì ë° ê¸ì ì ."},
+  {kw:["ê¸ë¦¬ ì¸ì","ê¸ë¦¬ì¸ì"],        r:"ð ê¸ë¦¬ ì¸ì â ì±ì¥ì£¼ ë¶ë´ ì¦ê°. ê¸ìµì£¼(KBê¸ìµÂ·ì íì§ì£¼) ìëì  ìí."},
+  {kw:["íì¨","ë¬ë¬","ìë¬ë¬"],        r:"ð± ìí ì½ì¸ ì ìì¶ì£¼(ì¼ì±ì ìÂ·íëì°¨) ìí. ë´ìÂ·ë°ì´ì¤ ë¶ë´ ì¦ê°."},
+  {kw:["ì¤êµ­","ê²½ê¸°ì¹¨ì²´","ì¹¨ì²´"],      r:"â ï¸ ì¤êµ­ ê²½ê¸° ëí â ì² ê°(POSCO)Â·ìëì°¨ ìì¶ ë¶ì ì . ì¸êµ­ì¸ ë§¤ë ìë ¥."},
+  {kw:["ê´ì¸","ë¬´ì­ì ì","í¸ë¼í"],    r:"â ï¸ ë¬´ì­ ê°ë± â ìì¶ ìì¡´ë ëì ì¢ëª© ë¦¬ì¤í¬. ë°ëì²´Â·ìëì°¨ ìí¥ ëª¨ëí°ë§."},
 ];
 const FLOW = [
-  {kw:["외국인","순매수"], r:"🟢 외국인 순매수 → 수급 최강 신호. 대형주 중심 상승 압력 강화."},
-  {kw:["외국인","순매도"], r:"🔴 외국인 순매도 → 원화 약세 + 지수 하락 압력. 방어주 또는 현금 비중 확대 고려."},
-  {kw:["기관","매수"],     r:"🟡 기관 매수 → 펀드 자금 유입. 코스피200 편입 대형주에 집중."},
-  {kw:["공매도"],          r:"📉 공매도 증가 → 시장 비관론 확산. 잔고 높은 종목 단기 하락 주의."},
+  {kw:["ì¸êµ­ì¸","ìë§¤ì"], r:"ð¢ ì¸êµ­ì¸ ìë§¤ì â ìê¸ ìµê° ì í¸. ëíì£¼ ì¤ì¬ ìì¹ ìë ¥ ê°í."},
+  {kw:["ì¸êµ­ì¸","ìë§¤ë"], r:"ð´ ì¸êµ­ì¸ ìë§¤ë â ìí ì½ì¸ + ì§ì íë½ ìë ¥. ë°©ì´ì£¼ ëë íê¸ ë¹ì¤ íë ê³ ë ¤."},
+  {kw:["ê¸°ê´","ë§¤ì"],     r:"ð¡ ê¸°ê´ ë§¤ì â íë ìê¸ ì ì. ì½ì¤í¼200 í¸ì ëíì£¼ì ì§ì¤."},
+  {kw:["ê³µë§¤ë"],          r:"ð ê³µë§¤ë ì¦ê° â ìì¥ ë¹ê´ë¡  íì°. ìê³  ëì ì¢ëª© ë¨ê¸° íë½ ì£¼ì."},
 ];
 const SENT = [
-  {kw:["반도체","HBM","AI","엔비디아","AI칩"], r:"🔥 반도체·AI 호재. SK하이닉스·삼성전자 직접 수혜. RSI 과매도 = 강력 진입 타이밍."},
-  {kw:["배터리","2차전지","전기차"],            r:"⚡ 2차전지 모멘텀. LG에너지솔루션·에코프로비엠 동반 상승 패턴."},
-  {kw:["실적","영업이익","어닝"],               r:"💹 실적 기대감 → 갭업 가능. RSI 40 이하 + 실적 호재 = 강력 진입 타이밍."},
-  {kw:["자사주","취득"],                       r:"📈 자사주 매입 = 저평가 신호 + 단기 수급 개선."},
-  {kw:["유상증자"],                            r:"📉 유상증자 → 주식 희석. 단기 주가 하락 압력. 규모와 목적 확인 필요."},
-  {kw:["로봇","자동화"],                       r:"🤖 로봇 산업 모멘텀. 레인보우로보틱스 주목."},
+  {kw:["ë°ëì²´","HBM","AI","ìë¹ëì","AIì¹©"], r:"ð¥ ë°ëì²´Â·AI í¸ì¬. SKíì´ëì¤Â·ì¼ì±ì ì ì§ì  ìí. RSI ê³¼ë§¤ë = ê°ë ¥ ì§ì íì´ë°."},
+  {kw:["ë°°í°ë¦¬","2ì°¨ì ì§","ì ê¸°ì°¨"],            r:"â¡ 2ì°¨ì ì§ ëª¨ë©í. LGìëì§ìë£¨ìÂ·ìì½íë¡ë¹ì  ëë° ìì¹ í¨í´."},
+  {kw:["ì¤ì ","ììì´ìµ","ì´ë"],               r:"ð¹ ì¤ì  ê¸°ëê° â ê°­ì ê°ë¥. RSI 40 ì´í + ì¤ì  í¸ì¬ = ê°ë ¥ ì§ì íì´ë°."},
+  {kw:["ìì¬ì£¼","ì·¨ë"],                       r:"ð ìì¬ì£¼ ë§¤ì = ì íê° ì í¸ + ë¨ê¸° ìê¸ ê°ì ."},
+  {kw:["ì ìì¦ì"],                            r:"ð ì ìì¦ì â ì£¼ì í¬ì. ë¨ê¸° ì£¼ê° íë½ ìë ¥. ê·ëª¨ì ëª©ì  íì¸ íì."},
+  {kw:["ë¡ë´","ìëí"],                       r:"ð¤ ë¡ë´ ì°ì ëª¨ë©í. ë ì¸ë³´ì°ë¡ë³´í±ì¤ ì£¼ëª©."},
 ];
 function matchDB(db, text) {
   for(const e of db) if(e.kw.some(k=>text.includes(k))) return e.r;
-  return "⚪ 명확한 패턴 미감지 — 기술적 종합점수 TOP 종목 위주로 판단하세요.";
+  return "âª ëªíí í¨í´ ë¯¸ê°ì§ â ê¸°ì ì  ì¢í©ì ì TOP ì¢ëª© ìì£¼ë¡ íë¨íì¸ì.";
 }
 
-// ── 감성 분석 키워드 ─────────────────────────────────────────────
+// ââ ê°ì± ë¶ì í¤ìë âââââââââââââââââââââââââââââââââââââââââââââ
 const SENT_POS = {
-  강함: ["급등","신고가","사상최대","대규모수주","깜짝실적","흑자전환","독점계약","자사주매입","어닝서프라이즈","초과달성"],
-  보통: ["상승","호재","증가","성장","수주","계약","흑자","확대","개선","기대","목표주가상향","매수의견","신제품출시","수혜"],
-  약함: ["회복","반등","긍정","기회","유망","전망","기대감","호조"],
+  ê°í¨: ["ê¸ë±","ì ê³ ê°","ì¬ììµë","ëê·ëª¨ìì£¼","ê¹ì§ì¤ì ","íìì í","ëì ê³ì½","ìì¬ì£¼ë§¤ì","ì´ëìíë¼ì´ì¦","ì´ê³¼ë¬ì±"],
+  ë³´íµ: ["ìì¹","í¸ì¬","ì¦ê°","ì±ì¥","ìì£¼","ê³ì½","íì","íë","ê°ì ","ê¸°ë","ëª©íì£¼ê°ìí¥","ë§¤ììê²¬","ì ì íì¶ì","ìí"],
+  ì½í¨: ["íë³µ","ë°ë±","ê¸ì ","ê¸°í","ì ë§","ì ë§","ê¸°ëê°","í¸ì¡°"],
 };
 const SENT_NEG = {
-  강함: ["폭락","사상최저","파산","회계부정","상장폐지","리콜","대규모적자","불기소","징역","환매중단"],
-  보통: ["하락","악재","감소","손실","적자","유상증자","소송","리스크","부담","조사","위기","약세","하향"],
-  약함: ["주의","경계","불확실","둔화","우려","부진","감속"],
+  ê°í¨: ["í­ë½","ì¬ììµì ","íì°","íê³ë¶ì ","ìì¥íì§","ë¦¬ì½","ëê·ëª¨ì ì","ë¶ê¸°ì","ì§ì­","íë§¤ì¤ë¨"],
+  ë³´íµ: ["íë½","ìì¬","ê°ì","ìì¤","ì ì","ì ìì¦ì","ìì¡","ë¦¬ì¤í¬","ë¶ë´","ì¡°ì¬","ìê¸°","ì½ì¸","íí¥"],
+  ì½í¨: ["ì£¼ì","ê²½ê³","ë¶íì¤","ëí","ì°ë ¤","ë¶ì§","ê°ì"],
 };
 function sentimentScore(text) {
   let s = 0;
-  for(const w of SENT_POS.강함) if(text.includes(w)) s += 1.0;
-  for(const w of SENT_POS.보통) if(text.includes(w)) s += 0.5;
-  for(const w of SENT_POS.약함) if(text.includes(w)) s += 0.2;
-  for(const w of SENT_NEG.강함) if(text.includes(w)) s -= 1.0;
-  for(const w of SENT_NEG.보통) if(text.includes(w)) s -= 0.5;
-  for(const w of SENT_NEG.약함) if(text.includes(w)) s -= 0.2;
+  for(const w of SENT_POS.ê°í¨) if(text.includes(w)) s += 1.0;
+  for(const w of SENT_POS.ë³´íµ) if(text.includes(w)) s += 0.5;
+  for(const w of SENT_POS.ì½í¨) if(text.includes(w)) s += 0.2;
+  for(const w of SENT_NEG.ê°í¨) if(text.includes(w)) s -= 1.0;
+  for(const w of SENT_NEG.ë³´íµ) if(text.includes(w)) s -= 0.5;
+  for(const w of SENT_NEG.ì½í¨) if(text.includes(w)) s -= 0.2;
   s = Math.max(-1, Math.min(1, s));
   let grade, color;
-  if(s >= 0.5)       { grade="강한 호재"; color="#22c55e"; }
-  else if(s >= 0.2)  { grade="호재";     color="#4ade80"; }
-  else if(s > -0.2)  { grade="중립";     color="#888";    }
-  else if(s > -0.5)  { grade="악재";     color="#f87171"; }
-  else               { grade="강한 악재"; color="#ef4444"; }
+  if(s >= 0.5)       { grade="ê°í í¸ì¬"; color="#22c55e"; }
+  else if(s >= 0.2)  { grade="í¸ì¬";     color="#4ade80"; }
+  else if(s > -0.2)  { grade="ì¤ë¦½";     color="#888";    }
+  else if(s > -0.5)  { grade="ìì¬";     color="#f87171"; }
+  else               { grade="ê°í ìì¬"; color="#ef4444"; }
   return {score:s, grade, color};
 }
 const STOCK_KW = {
-  "삼성전자":        ["삼성전자","갤럭시","파운드리","DS부문"],
-  "SK하이닉스":      ["SK하이닉스","하이닉스","HBM","HBM3","HBM4"],
-  "현대차":          ["현대차","현대자동차","제네시스","아이오닉"],
-  "기아":            ["기아","기아차","EV6","EV9"],
-  "LG에너지솔루션":  ["LG에너지","LGES","원통형배터리"],
-  "삼성바이오로직스":["삼성바이오","바이오에피스"],
-  "셀트리온":        ["셀트리온","램시마","허쥬마"],
-  "POSCO홀딩스":     ["포스코","POSCO","철강"],
-  "KB금융":          ["KB금융","국민은행","KB국민"],
-  "신한지주":        ["신한지주","신한은행","신한"],
-  "에코프로비엠":    ["에코프로비엠","에코프로","양극재"],
-  "HLB":             ["HLB","리보세라닙"],
-  "카카오게임즈":    ["카카오게임즈","카카오게임"],
-  "레인보우로보틱스":["레인보우로보틱스","협동로봇"],
-  "클래시스":        ["클래시스","울쎄라","슈링크"],
+  "ì¼ì±ì ì":        ["ì¼ì±ì ì","ê°¤ë­ì","íì´ëë¦¬","DSë¶ë¬¸"],
+  "SKíì´ëì¤":      ["SKíì´ëì¤","íì´ëì¤","HBM","HBM3","HBM4"],
+  "íëì°¨":          ["íëì°¨","íëìëì°¨","ì ë¤ìì¤","ìì´ì¤ë"],
+  "ê¸°ì":            ["ê¸°ì","ê¸°ìì°¨","EV6","EV9"],
+  "LGìëì§ìë£¨ì":  ["LGìëì§","LGES","ìíµíë°°í°ë¦¬"],
+  "ì¼ì±ë°ì´ì¤ë¡ì§ì¤":["ì¼ì±ë°ì´ì¤","ë°ì´ì¤ìí¼ì¤"],
+  "ìí¸ë¦¬ì¨":        ["ìí¸ë¦¬ì¨","ë¨ìë§","íì¥¬ë§"],
+  "POSCOíë©ì¤":     ["í¬ì¤ì½","POSCO","ì² ê°"],
+  "KBê¸ìµ":          ["KBê¸ìµ","êµ­ë¯¼ìí","KBêµ­ë¯¼"],
+  "ì íì§ì£¼":        ["ì íì§ì£¼","ì íìí","ì í"],
+  "ìì½íë¡ë¹ì ":    ["ìì½íë¡ë¹ì ","ìì½íë¡","ìê·¹ì¬"],
+  "HLB":             ["HLB","ë¦¬ë³´ì¸ë¼ë"],
+  "ì¹´ì¹´ì¤ê²ìì¦":    ["ì¹´ì¹´ì¤ê²ìì¦","ì¹´ì¹´ì¤ê²ì"],
+  "ë ì¸ë³´ì°ë¡ë³´í±ì¤":["ë ì¸ë³´ì°ë¡ë³´í±ì¤","íëë¡ë´"],
+  "í´ëìì¤":        ["í´ëìì¤","ì¸ìë¼","ìë§í¬"],
 };
 const SECTOR_KW_MAP = [
-  {stocks:["삼성전자","SK하이닉스"],          kw:["반도체","D램","낸드","HBM","파운드리","AI칩","엔비디아","TSMC"]},
-  {stocks:["LG에너지솔루션","에코프로비엠"],  kw:["2차전지","배터리","전기차","리튬","양극재","음극재"]},
-  {stocks:["현대차","기아"],                  kw:["완성차","전기차수요","자율주행","자동차업계"]},
-  {stocks:["삼성바이오로직스","셀트리온","HLB"],kw:["바이오","제약","임상","FDA","신약","CMO"]},
-  {stocks:["KB금융","신한지주"],              kw:["금리","은행주","금융주","기준금리","예금"]},
-  {stocks:["레인보우로보틱스"],               kw:["로봇","협동로봇","산업용로봇","자동화"]},
+  {stocks:["ì¼ì±ì ì","SKíì´ëì¤"],          kw:["ë°ëì²´","Dë¨","ë¸ë","HBM","íì´ëë¦¬","AIì¹©","ìë¹ëì","TSMC"]},
+  {stocks:["LGìëì§ìë£¨ì","ìì½íë¡ë¹ì "],  kw:["2ì°¨ì ì§","ë°°í°ë¦¬","ì ê¸°ì°¨","ë¦¬í¬","ìê·¹ì¬","ìê·¹ì¬"]},
+  {stocks:["íëì°¨","ê¸°ì"],                  kw:["ìì±ì°¨","ì ê¸°ì°¨ìì","ìì¨ì£¼í","ìëì°¨ìê³"]},
+  {stocks:["ì¼ì±ë°ì´ì¤ë¡ì§ì¤","ìí¸ë¦¬ì¨","HLB"],kw:["ë°ì´ì¤","ì ì½","ìì","FDA","ì ì½","CMO"]},
+  {stocks:["KBê¸ìµ","ì íì§ì£¼"],              kw:["ê¸ë¦¬","ìíì£¼","ê¸ìµì£¼","ê¸°ì¤ê¸ë¦¬","ìê¸"]},
+  {stocks:["ë ì¸ë³´ì°ë¡ë³´í±ì¤"],               kw:["ë¡ë´","íëë¡ë´","ì°ìì©ë¡ë´","ìëí"]},
 ];
 function mapNewsToStocks(title) {
   const matched = [];
@@ -757,15 +774,15 @@ function mapNewsToStocks(title) {
   for(const sec of SECTOR_KW_MAP)
     if(sec.kw.some(k => title.includes(k)))
       sec.stocks.forEach(s => { if(!matched.includes(s)) matched.push(s); });
-  return matched.length > 0 ? matched : ["시장 전반"];
+  return matched.length > 0 ? matched : ["ìì¥ ì ë°"];
 }
 
-// ── RSS 자동 수집 ────────────────────────────────────────────────
+// ââ RSS ìë ìì§ ââââââââââââââââââââââââââââââââââââââââââââââââ
 const RSS_FEEDS = [
-  {name:"한국경제", url:"https://www.hankyung.com/feed/economy"},
-  {name:"연합뉴스", url:"https://www.yna.co.kr/RSS/economy.xml"},
-  {name:"이데일리", url:"https://rss.edaily.co.kr/edailyrss/economy.xml"},
-  {name:"머니투데이",url:"https://news.mt.co.kr/mtadmin/etc/rss.html?type=1"},
+  {name:"íêµ­ê²½ì ", url:"https://www.hankyung.com/feed/economy"},
+  {name:"ì°í©ë´ì¤", url:"https://www.yna.co.kr/RSS/economy.xml"},
+  {name:"ì´ë°ì¼ë¦¬", url:"https://rss.edaily.co.kr/edailyrss/economy.xml"},
+  {name:"ë¨¸ëí¬ë°ì´",url:"https://news.mt.co.kr/mtadmin/etc/rss.html?type=1"},
 ];
 async function fetchFeed(feed) {
   const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}&count=8`;
@@ -784,30 +801,30 @@ window.autoFetchNews = async function() {
   const feedWrap = document.getElementById("auto-news-feed");
   const statusEl = document.getElementById("news-status");
   const newsOut  = document.getElementById("news-out");
-  statusEl.textContent = "📡 뉴스 수집 중...";
-  feedWrap.innerHTML = `<div style="color:var(--muted);padding:20px;text-align:center;font-size:13px">⏳ RSS 피드 수집 중입니다 (최대 10초)...</div>`;
+  statusEl.textContent = "ð¡ ë´ì¤ ìì§ ì¤...";
+  feedWrap.innerHTML = `<div style="color:var(--muted);padding:20px;text-align:center;font-size:13px">â³ RSS í¼ë ìì§ ì¤ìëë¤ (ìµë 10ì´)...</div>`;
   newsOut.style.display = "none";
 
   const allNews = [];
   for(const feed of RSS_FEEDS) {
     try { allNews.push(...await fetchFeed(feed)); }
-    catch(e){ console.warn(feed.name+" 실패:", e); }
+    catch(e){ console.warn(feed.name+" ì¤í¨:", e); }
   }
 
   document.getElementById("news-update-time").textContent =
-    "업데이트: " + new Date().toLocaleTimeString("ko-KR");
+    "ìë°ì´í¸: " + new Date().toLocaleTimeString("ko-KR");
 
   if(allNews.length === 0) {
-    statusEl.textContent = "⚠️ 자동수집 실패 — 직접 입력을 이용하세요";
+    statusEl.textContent = "â ï¸ ìëìì§ ì¤í¨ â ì§ì  ìë ¥ì ì´ì©íì¸ì";
     feedWrap.innerHTML = `<div style="color:var(--muted);padding:20px;text-align:center;font-size:13px">
-      네트워크 제한으로 자동 수집에 실패했습니다.<br>아래 '직접 입력' 버튼을 눌러 뉴스를 입력해주세요.</div>`;
+      ë¤í¸ìí¬ ì íì¼ë¡ ìë ìì§ì ì¤í¨íìµëë¤.<br>ìë 'ì§ì  ìë ¥' ë²í¼ì ëë¬ ë´ì¤ë¥¼ ìë ¥í´ì£¼ì¸ì.</div>`;
     document.getElementById("manual-input-area").style.display = "block";
     return;
   }
 
-  statusEl.textContent = "✅ " + allNews.length + "개 뉴스 수집 완료";
+  statusEl.textContent = "â " + allNews.length + "ê° ë´ì¤ ìì§ ìë£";
 
-  // 감성 분석 + 종목 매핑
+  // ê°ì± ë¶ì + ì¢ëª© ë§¤í
   let totalScore = 0;
   const analyzed = allNews.map(n => {
     const s = sentimentScore(n.title);
@@ -817,23 +834,23 @@ window.autoFetchNews = async function() {
   });
   totalScore /= allNews.length;
 
-  // 시장 무드
+  // ìì¥ ë¬´ë
   const moodEl = document.getElementById("market-mood");
   moodEl.style.display = "block";
   const pct = Math.round((totalScore + 1) / 2 * 100);
   let moodText, moodColor;
-  if(totalScore >= 0.4)      { moodText="🔥 강력 낙관"; moodColor="#22c55e"; }
-  else if(totalScore >= 0.15){ moodText="📈 낙관";     moodColor="#4ade80"; }
-  else if(totalScore > -0.15){ moodText="➡️ 중립";     moodColor="#f0b429"; }
-  else if(totalScore > -0.4) { moodText="📉 비관";     moodColor="#f87171"; }
-  else                       { moodText="⚠️ 강력 비관";moodColor="#ef4444"; }
+  if(totalScore >= 0.4)      { moodText="ð¥ ê°ë ¥ ëê´"; moodColor="#22c55e"; }
+  else if(totalScore >= 0.15){ moodText="ð ëê´";     moodColor="#4ade80"; }
+  else if(totalScore > -0.15){ moodText="â¡ï¸ ì¤ë¦½";     moodColor="#f0b429"; }
+  else if(totalScore > -0.4) { moodText="ð ë¹ê´";     moodColor="#f87171"; }
+  else                       { moodText="â ï¸ ê°ë ¥ ë¹ê´";moodColor="#ef4444"; }
   document.getElementById("mood-label").textContent = moodText;
   document.getElementById("mood-label").style.color = moodColor;
-  // 게이지: 양쪽 마스크로 구현
+  // ê²ì´ì§: ììª½ ë§ì¤í¬ë¡ êµ¬í
   document.getElementById("mood-mask-left").style.width  = Math.max(0, 50 - pct/2) + "%";
   document.getElementById("mood-mask-right").style.width = Math.max(0, 100 - pct) + "%";
 
-  // 뉴스 카드
+  // ë´ì¤ ì¹´ë
   feedWrap.innerHTML = `
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;max-height:420px;overflow-y:auto;padding-right:4px">
       ${analyzed.map(n=>`
@@ -841,49 +858,49 @@ window.autoFetchNews = async function() {
            style="background:var(--card2);border:1px solid ${n.color}33;border-radius:8px;padding:12px;text-decoration:none;display:block;transition:border .2s"
            onmouseover="this.style.borderColor='${n.color}'" onmouseout="this.style.borderColor='${n.color}33'">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <span style="font-size:10px;color:#555">${n.src} · ${n.pub}</span>
+            <span style="font-size:10px;color:#555">${n.src} Â· ${n.pub}</span>
             <span style="font-size:10px;font-weight:700;color:${n.color};white-space:nowrap;margin-left:6px">${n.grade}</span>
           </div>
           <div style="font-size:12px;color:var(--text);line-height:1.5;margin-bottom:6px">${n.title}</div>
-          <div style="font-size:10px;color:${n.color}">🎯 ${n.stocks.slice(0,3).join(" · ")}</div>
+          <div style="font-size:10px;color:${n.color}">ð¯ ${n.stocks.slice(0,3).join(" Â· ")}</div>
         </a>`).join("")}
     </div>`;
 
-  // 에이전트 자동 분석
+  // ìì´ì í¸ ìë ë¶ì
   const combined = analyzed.map(n => n.title).join(" ");
   const stockHits = {};
   analyzed.forEach(n => {
-    if(n.stocks[0] !== "시장 전반")
+    if(n.stocks[0] !== "ìì¥ ì ë°")
       n.stocks.forEach(s => { stockHits[s] = (stockHits[s]||0) + n.score; });
   });
-  const topBuy  = Object.entries(stockHits).filter(([,v])=>v>0).sort(([,a],[,b])=>b-a).slice(0,3).map(([k])=>k).join(", ") || "명확한 수혜주 없음";
-  const topSell = Object.entries(stockHits).filter(([,v])=>v<0).sort(([,a],[,b])=>a-b).slice(0,2).map(([k])=>k).join(", ") || "없음";
+  const topBuy  = Object.entries(stockHits).filter(([,v])=>v>0).sort(([,a],[,b])=>b-a).slice(0,3).map(([k])=>k).join(", ") || "ëªíí ìíì£¼ ìì";
+  const topSell = Object.entries(stockHits).filter(([,v])=>v<0).sort(([,a],[,b])=>a-b).slice(0,2).map(([k])=>k).join(", ") || "ìì";
 
   newsOut.style.display = "block";
   newsOut.innerHTML = `
-    <p style="color:var(--gold);font-weight:600;margin-bottom:12px">🤖 멀티 에이전트 자동 분석 결과</p>
+    <p style="color:var(--gold);font-weight:600;margin-bottom:12px">ð¤ ë©í° ìì´ì í¸ ìë ë¶ì ê²°ê³¼</p>
     <div class="agent-grid">
       <div class="agent-card">
-        <div class="agent-name">🌐 거시경제 에이전트</div>
+        <div class="agent-name">ð ê±°ìê²½ì  ìì´ì í¸</div>
         <div style="font-size:13px">${matchDB(MACRO, combined)}</div>
       </div>
       <div class="agent-card">
-        <div class="agent-name">💰 수급 에이전트</div>
+        <div class="agent-name">ð° ìê¸ ìì´ì í¸</div>
         <div style="font-size:13px">${matchDB(FLOW, combined)}</div>
       </div>
       <div class="agent-card">
-        <div class="agent-name">📰 시장심리 에이전트</div>
+        <div class="agent-name">ð° ìì¥ì¬ë¦¬ ìì´ì í¸</div>
         <div style="font-size:13px">${matchDB(SENT, combined)}</div>
       </div>
     </div>
     <div style="margin-top:14px;background:var(--bg);border-radius:8px;padding:14px;border:1px solid var(--border)">
-      <div><strong>📈 뉴스 기반 주목 종목:</strong> <span style="color:#4ade80">${topBuy}</span></div>
-      <div style="margin-top:6px"><strong>📉 뉴스 기반 경고 종목:</strong> <span style="color:#f87171">${topSell}</span></div>
-      <div style="margin-top:8px;color:var(--muted);font-size:12px">⚠️ 뉴스 감성 분석 + 기술적 지표를 함께 확인 후 투자 판단하세요.</div>
+      <div><strong>ð ë´ì¤ ê¸°ë° ì£¼ëª© ì¢ëª©:</strong> <span style="color:#4ade80">${topBuy}</span></div>
+      <div style="margin-top:6px"><strong>ð ë´ì¤ ê¸°ë° ê²½ê³  ì¢ëª©:</strong> <span style="color:#f87171">${topSell}</span></div>
+      <div style="margin-top:8px;color:var(--muted);font-size:12px">â ï¸ ë´ì¤ ê°ì± ë¶ì + ê¸°ì ì  ì§íë¥¼ í¨ê» íì¸ í í¬ì íë¨íì¸ì.</div>
     </div>`;
 };
 
-// ── 수동 입력 접기/펼치기 ─────────────────────────────────────────
+// ââ ìë ìë ¥ ì ê¸°/í¼ì¹ê¸° âââââââââââââââââââââââââââââââââââââââââ
 window.toggleManualInput = function() {
   const el = document.getElementById("manual-input-area");
   el.style.display = el.style.display === "none" ? "block" : "none";
@@ -895,15 +912,15 @@ window.runManualAgents = function() {
   const top3 = [...STOCKS].sort((a,b)=>b.score-a.score).slice(0,3).map(s=>s.name).join(", ");
   out.style.display = "block";
   out.innerHTML = `
-    <p style="color:var(--gold);font-weight:600;margin-bottom:12px">🤖 멀티 에이전트 분석 결과 (수동 입력)</p>
+    <p style="color:var(--gold);font-weight:600;margin-bottom:12px">ð¤ ë©í° ìì´ì í¸ ë¶ì ê²°ê³¼ (ìë ìë ¥)</p>
     <div class="agent-grid">
-      <div class="agent-card"><div class="agent-name">🌐 거시경제 에이전트</div><div style="font-size:13px">${matchDB(MACRO,text)}</div></div>
-      <div class="agent-card"><div class="agent-name">💰 수급 에이전트</div><div style="font-size:13px">${matchDB(FLOW,text)}</div></div>
-      <div class="agent-card"><div class="agent-name">📰 시장심리 에이전트</div><div style="font-size:13px">${matchDB(SENT,text)}</div></div>
+      <div class="agent-card"><div class="agent-name">ð ê±°ìê²½ì  ìì´ì í¸</div><div style="font-size:13px">${matchDB(MACRO,text)}</div></div>
+      <div class="agent-card"><div class="agent-name">ð° ìê¸ ìì´ì í¸</div><div style="font-size:13px">${matchDB(FLOW,text)}</div></div>
+      <div class="agent-card"><div class="agent-name">ð° ìì¥ì¬ë¦¬ ìì´ì í¸</div><div style="font-size:13px">${matchDB(SENT,text)}</div></div>
     </div>
     <div style="margin-top:14px;background:var(--bg);border-radius:8px;padding:14px;border:1px solid var(--border)">
-      <strong>🏆 현재 종합점수 TOP 매수:</strong> ${top3}<br>
-      <span style="color:var(--muted);font-size:12px">뉴스 시나리오와 기술적 신호를 교차 확인 후 진입 여부를 결정하세요.</span>
+      <strong>ð íì¬ ì¢í©ì ì TOP ë§¤ì:</strong> ${top3}<br>
+      <span style="color:var(--muted);font-size:12px">ë´ì¤ ìëë¦¬ì¤ì ê¸°ì ì  ì í¸ë¥¼ êµì°¨ íì¸ í ì§ì ì¬ë¶ë¥¼ ê²°ì íì¸ì.</span>
     </div>`;
 </script>
 </body>
