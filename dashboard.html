@@ -355,7 +355,7 @@ footer {
 ══════════════════════════════════════════════════════ -->
 <script type="module">
 import { initializeApp }          from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-import { getAuth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut, onAuthStateChanged }
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged }
                                    from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
@@ -451,11 +451,8 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 // ── 로그인 버튼 ──────────────────────────────────────────────────
-// 리디렉션 결과 처리 (로그인 후 돌아왔을 때)
-getRedirectResult(auth).catch(e => console.error("redirect error:", e));
-
 document.getElementById("gate-login-btn").onclick  = () =>
-  signInWithRedirect(auth, provider);
+  signInWithPopup(auth, provider).catch(e => console.error("popup error:", e));
 document.getElementById("nav-logout").onclick      = () => signOut(auth);
 </script>
 
