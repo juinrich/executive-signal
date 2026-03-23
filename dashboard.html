@@ -172,6 +172,16 @@ footer {
   text-align: center; padding: 20px;
   color: var(--muted); font-size: 11px; border-top: 1px solid var(--border);
 }
+
+/* ── Stripe 플랜 선택 카드 ── */
+.plan-selector{display:flex;gap:12px;margin:20px 0 8px;width:100%;max-width:420px}
+.plan-card{flex:1;padding:14px 16px;border-radius:10px;border:2px solid var(--border);cursor:pointer;transition:border-color .2s,background .2s;text-align:left}
+.plan-card.selected{border-color:var(--gold);background:rgba(240,180,41,.08)}
+.plan-label{font-size:13px;color:var(--muted);margin-bottom:6px}
+.plan-save{display:inline-block;font-size:10px;background:var(--gold);color:#000;border-radius:4px;padding:1px 5px;margin-left:4px;font-weight:700}
+.plan-price{font-size:22px;font-weight:700;color:var(--text)}
+.plan-unit{font-size:13px;font-weight:400;color:var(--muted)}
+.plan-monthly-eq{font-size:11px;color:var(--muted);margin-top:3px}
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
@@ -199,7 +209,18 @@ footer {
     RSI · MACD · 볼린저밴드 · 거래량 급증 · 종합점수 분석을<br>
     매일 무제한으로 이용해보세요.
   </div>
-  <button class="gate-btn" onclick="location.href='/#pricing'">멤버십 시작하기 →</button>
+  <div class="plan-selector">
+    <div class="plan-card selected" id="opt-monthly" onclick="selectPlan('monthly')">
+      <div class="plan-label">월간 구독</div>
+      <div class="plan-price">₩29,800<span class="plan-unit">/월</span></div>
+    </div>
+    <div class="plan-card" id="opt-annual" onclick="selectPlan('annual')">
+      <div class="plan-label">연간 구독 <span class="plan-save">2개월 무료</span></div>
+      <div class="plan-price">₩237,600<span class="plan-unit">/년</span></div>
+      <div class="plan-monthly-eq">월 ₩19,800 환산</div>
+    </div>
+  </div>
+  <button class="gate-btn" id="subscribe-cta" onclick="startCheckout()">구독 시작하기 →</button>
   <div class="gate-secondary" id="gate-logout-btn">다른 계정으로 로그인</div>
 </div>
 
@@ -378,22 +399,15 @@ const provider = new GoogleAuthProvider();
 // ── 구독 상태 확인 (Firestore subscribers/{uid}) ──────────────────
 async function checkSubscription(uid) {
   try {
-    const ref  = doc(db, "subscribers", uid);
-    const snap = await getDoc(ref);
-    if (!snap.exists()) return false;
-    const data = snap.data();
-    // status: 'active' 이고 만료일이 미래이면 유효
-    if (data.status !== 'active') return false;
-    if (data.expiresAt) {
-      const exp = data.expiresAt.toDate ? data.expiresAt.toDate() : new Date(data.expiresAt);
-      if (exp < new Date()) return false;
+    const snap = await getDoc(doc(db, 'users', uid));
+    if (snap.exists()) {
+      const d = snap.data();
+      return d.subscription && d.subscription.status === 'active';
     }
-    return true;
   } catch (e) {
-    console.warn("구독 확인 오류:", e);
-    // Firestore 미설정 시 n8n으로 fallback
-    return await checkSubscriptionN8n(uid);
+    console.error('subscription check error:', e);
   }
+  return false;
 }
 
 // ── n8n fallback: 구독 상태 확인 ─────────────────────────────────
@@ -922,6 +936,78 @@ window.runManualAgents = function() {
       <strong>🏆 현재 종합점수 TOP 매수:</strong> ${top3}<br>
       <span style="color:var(--muted);font-size:12px">뉴스 시나리오와 기술적 신호를 교차 확인 후 진입 여부를 결정하세요.</span>
     </div>`;
+
+// ── Stripe 결제 연동 ──────────────────────────────────────────────────
+let _selectedPlan = 'monthly';
+
+function selectPlan(plan) {
+  _selectedPlan = plan;
+  document.getElementById('opt-monthly').classList.toggle('selected', plan === 'monthly');
+  document.getElementById('opt-annual').classList.toggle('selected', plan === 'annual');
+}
+
+async function startCheckout() {
+  const btn = document.getElementById('subscribe-cta');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = '처리 중...';
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('로그인이 필요합니다');
+    const resp = await fetch('/api/create-checkout-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid: user.uid, email: user.email, plan: _selectedPlan }),
+    });
+    const data = await resp.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      throw new Error(data.error || '결제 페이지 연결 실패');
+    }
+  } catch (e) {
+    console.error('checkout error:', e);
+    btn.disabled = false;
+    btn.textContent = '구독 시작하기 →';
+    alert(e.message || '오류가 발생했습니다. 다시 시도해 주세요.');
+  }
+}
+
+// 결제 완료 후 리다이렉트 처리
+(function handlePaymentReturn() {
+  const params = new URLSearchParams(location.search);
+  const payment = params.get('payment');
+  if (!payment) return;
+  // URL 파라미터 제거
+  history.replaceState({}, '', location.pathname);
+  if (payment === 'success') {
+    // 웹훅 처리 대기 후 재확인
+    const msg = document.createElement('div');
+    msg.id = 'payment-toast';
+    msg.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:#fff;padding:12px 24px;border-radius:8px;font-weight:600;z-index:9999;';
+    msg.textContent = '✅ 결제가 완료되었습니다! 잠시 후 대시보드가 열립니다.';
+    document.body.appendChild(msg);
+    // 3초 후 구독 상태 재확인
+    setTimeout(async () => {
+      const u = auth.currentUser;
+      if (u) {
+        const snap = await getDoc(doc(db, 'users', u.uid));
+        const d = snap.exists() ? snap.data() : {};
+        if (d.subscription && d.subscription.status === 'active') {
+          gateSub.style.display = 'none';
+          gateLogin.style.display = 'none';
+        }
+      }
+      msg.remove();
+    }, 3500);
+  } else if (payment === 'cancel') {
+    const msg = document.createElement('div');
+    msg.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#ef4444;color:#fff;padding:12px 24px;border-radius:8px;font-weight:600;z-index:9999;';
+    msg.textContent = '결제가 취소되었습니다.';
+    document.body.appendChild(msg);
+    setTimeout(() => msg.remove(), 3000);
+  }
+})();
 </script>
 </body>
 </html>
