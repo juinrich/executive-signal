@@ -427,6 +427,12 @@ async function checkSubscriptionN8n(uid) {
 
 // ── 인증 상태 감지 → 접근 제어 ───────────────────────────────────
 onAuthStateChanged(auth, async (user) => {
+  // 전역 함수 노출 (onclick 핸들러용 - 함수선언은 호이스팅되므로 바로 가능)
+  window._selectedPlan = window._selectedPlan || 'monthly';
+  window.startCheckout = async function() { return startCheckout(); };
+  window.selectPlan = function(plan) { return selectPlan(plan); };
+  window.handlePaymentReturn = function() { if(typeof handlePaymentReturn==='function') return handlePaymentReturn(); };
+
   const loading   = document.getElementById("gate-loading");
   const gateLogin = document.getElementById("gate-login");
   const gateSub   = document.getElementById("gate-subscribe");
