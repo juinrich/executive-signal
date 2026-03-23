@@ -1,0 +1,9 @@
+{
+  "name": "executive-signal",
+  "version": "1.0.0",
+  "description": "Executive Signal - AI 주식 시그널 대시보드",
+  "dependencies": {
+    "stripe": "^14.21.0",
+    "firebase-admin": "^12.1.0"
+  }
+}
