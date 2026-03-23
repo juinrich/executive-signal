@@ -220,7 +220,7 @@ footer {
       <div class="plan-monthly-eq">월 ₩19,800 환산</div>
     </div>
   </div>
-  <button class="gate-btn" id="subscribe-cta" onclick="startCheckout()">구독 시작하기 →</button>
+  <button class="gate-btn" id="subscribe-cta" onclick="(async()=>{if(!window._uid)return;const r=await fetch('/api/create-checkout-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uid:window._uid,email:window._email,plan:window._selectedPlan||'monthly'})});const d=await r.json();if(d.url)location.href=d.url;})()">구독 시작하기 →</button>
   <div class="gate-secondary" id="gate-logout-btn">다른 계정으로 로그인</div>
 </div>
 
@@ -427,11 +427,9 @@ async function checkSubscriptionN8n(uid) {
 
 // ── 인증 상태 감지 → 접근 제어 ───────────────────────────────────
 onAuthStateChanged(auth, async (user) => {
-  // 전역 함수 노출 (onclick 핸들러용 - 함수선언은 호이스팅되므로 바로 가능)
+  window._uid = user ? user.uid : null;
+  window._email = user ? user.email : null;
   window._selectedPlan = window._selectedPlan || 'monthly';
-  window.startCheckout = async function() { return startCheckout(); };
-  window.selectPlan = function(plan) { return selectPlan(plan); };
-  window.handlePaymentReturn = function() { if(typeof handlePaymentReturn==='function') return handlePaymentReturn(); };
 
   const loading   = document.getElementById("gate-loading");
   const gateLogin = document.getElementById("gate-login");
@@ -1015,12 +1013,6 @@ async function startCheckout() {
   }
 })();
 
-// 전역 노출 (onclick 핸들러에서 호출 가능하도록)
-window.startCheckout = startCheckout;
-window.selectPlan = selectPlan;
-window.checkSubscription = checkSubscription;
-window.handlePaymentReturn = handlePaymentReturn;
-window._selectedPlan = 'monthly';
 
 </script>
 </body>
