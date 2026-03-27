@@ -473,6 +473,9 @@ onAuthStateChanged(auth, async (user) => {
       });
       const _ad = await _ar.json();
       if (_ad.success) {
+             loading.classList.remove('show');
+             gateLogin.classList.remove('show');
+             gateSub.classList.remove('show');
         const _tm = document.createElement('div');
         _tm.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:#fff;padding:14px 28px;border-radius:8px;font-weight:700;font-size:16px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.3)';
         _tm.textContent = '🎉 구독이 활성화되었습니다! 대시보드를 즐기세요.';
@@ -500,7 +503,10 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   // 구독 확인 완료 → 대시보드 표시
-  navUser.style.display   = "flex";
+  loading.classList.remove('show');
+  gateLogin.classList.remove('show');
+  gateSub.classList.remove('show');
+    navUser.style.display   = "flex";
   navAvatar.src           = user.photoURL || "";
   navName.textContent     = user.displayName || user.email;
   dashboard.style.display = "block";
@@ -991,78 +997,15 @@ window.runManualAgents = function() {
     </div>`;
 
 // ── Stripe 결제 연동 ──────────────────────────────────────────────────
-let _selectedPlan = 'monthly';
+};
 
-function selectPlan(plan) {
-  _selectedPlan = plan;
-  document.getElementById('opt-monthly').classList.toggle('selected', plan === 'monthly');
-  document.getElementById('opt-annual').classList.toggle('selected', plan === 'annual');
-}
-
-async function startCheckout() {
-  const btn = document.getElementById('subscribe-cta');
-  if (!btn) return;
-  btn.disabled = true;
-  btn.textContent = '처리 중...';
-  try {
-    const user = auth.currentUser;
-    if (!user) throw new Error('로그인이 필요합니다');
-    const resp = await fetch('/api/create-checkout-session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uid: user.uid, email: user.email, plan: _selectedPlan }),
-    });
-    const data = await resp.json();
-    if (data.url) {
-      window.location.href = data.url;
-    } else {
-      throw new Error(data.error || '결제 페이지 연결 실패');
-    }
-  } catch (e) {
-    console.error('checkout error:', e);
-    btn.disabled = false;
-    btn.textContent = '구독 시작하기 →';
-    alert(e.message || '오류가 발생했습니다. 다시 시도해 주세요.');
-  }
-}
-
-// 결제 완료 후 리다이렉트 처리
-(function handlePaymentReturn() {
-  const params = new URLSearchParams(location.search);
-  const payment = params.get('payment');
-  if (!payment) return;
-  // URL 파라미터 제거
-  history.replaceState({}, '', location.pathname);
-  if (payment === 'success') {
-    // 웹훅 처리 대기 후 재확인
-    const msg = document.createElement('div');
-    msg.id = 'payment-toast';
-    msg.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:#fff;padding:12px 24px;border-radius:8px;font-weight:600;z-index:9999;';
-    msg.textContent = '✅ 결제가 완료되었습니다! 잠시 후 대시보드가 열립니다.';
-    document.body.appendChild(msg);
-    // 3초 후 구독 상태 재확인
-    setTimeout(async () => {
-      const u = auth.currentUser;
-      if (u) {
-        const snap = await getDoc(doc(db, 'users', u.uid));
-        const d = snap.exists() ? snap.data() : {};
-        if (d.subscription && d.subscription.status === 'active') {
-          gateSub.style.display = 'none';
-          gateLogin.style.display = 'none';
-        }
-      }
-      msg.remove();
-    }, 3500);
-  } else if (payment === 'cancel') {
-    const msg = document.createElement('div');
-    msg.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#ef4444;color:#fff;padding:12px 24px;border-radius:8px;font-weight:600;z-index:9999;';
-    msg.textContent = '결제가 취소되었습니다.';
-    document.body.appendChild(msg);
-    setTimeout(() => msg.remove(), 3000);
-  }
-})();
-
-
+window.selectPlan = function(plan) {
+  window._selectedPlan = plan;
+  const m = document.getElementById('opt-monthly');
+  const a = document.getElementById('opt-annual');
+  if(m) m.classList.toggle('selected', plan==='monthly');
+  if(a) a.classList.toggle('selected', plan==='annual');
+};
 </script>
 </body>
 </html>
