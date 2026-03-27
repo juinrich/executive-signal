@@ -431,7 +431,14 @@ async function checkSubscriptionN8n(uid) {
 }
 
 // ── 인증 상태 감지 → 접근 제어 ───────────────────────────────────
+
+// ── 최대 3초 대기: Firebase Auth가 느릴 때 로그인 화면 바로 표시 ──
+const authLoadTimeout = setTimeout(() => {
+  document.getElementById('gate-loading').classList.remove('show');
+  document.getElementById('gate-login').classList.add('show');
+}, 3000);
 onAuthStateChanged(auth, async (user) => {
+  clearTimeout(authLoadTimeout); // 타임아웃 해제
   window._uid = user ? user.uid : null;
   window._email = user ? user.email : null;
   window._selectedPlan = window._selectedPlan || 'monthly';
