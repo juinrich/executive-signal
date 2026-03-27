@@ -399,13 +399,18 @@ const provider = new GoogleAuthProvider();
 // ── 구독 상태 확인 (Firestore subscribers/{uid}) ──────────────────
 async function checkSubscription(uid) {
   try {
-    const snap = await getDoc(doc(db, 'users', uid));
+    // Firestore 5초 타임아웃: 오프라인 시 무한 대기 방지
+    const snap = await Promise.race([
+      getDoc(doc(db, 'users', uid)),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 5000))
+    ]);
     if (snap.exists()) {
       const d = snap.data();
       return d.subscription && d.subscription.status === 'active';
     }
   } catch (e) {
-    console.error('subscription check error:', e);
+    console.warn('Firestore 구독 확인 실패, n8n fallback 시도:', e.message);
+    return await checkSubscriptionN8n(uid);
   }
   return false;
 }
@@ -804,16 +809,25 @@ const RSS_FEEDS = [
 ];
 async function fetchFeed(feed) {
   const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}&count=8`;
-  const r = await fetch(url);
-  if(!r.ok) return [];
-  const d = await r.json();
-  if(d.status !== "ok" || !d.items) return [];
-  return d.items.slice(0,6).map(it => ({
-    title: it.title || "",
-    link:  it.link  || "#",
-    pub:   it.pubDate ? new Date(it.pubDate).toLocaleString("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}) : "",
-    src:   feed.name,
-  }));
+  // 6초 타임아웃: 느린 피드에서 무한 대기 방지
+  const controller = new AbortController();
+  const tid = setTimeout(() => controller.abort(), 6000);
+  try {
+    const r = await fetch(url, { signal: controller.signal });
+    clearTimeout(tid);
+    if(!r.ok) return [];
+    const d = await r.json();
+    if(d.status !== "ok" || !d.items) return [];
+    return d.items.slice(0,6).map(it => ({
+      title: it.title || "",
+      link:  it.link  || "#",
+      pub:   it.pubDate ? new Date(it.pubDate).toLocaleString("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}) : "",
+      src:   feed.name,
+    }));
+  } catch(e) {
+    clearTimeout(tid);
+    return [];
+  }
 }
 window.autoFetchNews = async function() {
   const feedWrap = document.getElementById("auto-news-feed");
@@ -823,11 +837,9 @@ window.autoFetchNews = async function() {
   feedWrap.innerHTML = `<div style="color:var(--muted);padding:20px;text-align:center;font-size:13px">⏳ RSS 피드 수집 중입니다 (최대 10초)...</div>`;
   newsOut.style.display = "none";
 
-  const allNews = [];
-  for(const feed of RSS_FEEDS) {
-    try { allNews.push(...await fetchFeed(feed)); }
-    catch(e){ console.warn(feed.name+" 실패:", e); }
-  }
+  // ── 병렬 수집: 4개 피드를 동시에 요청 (기존 순차 방식 대비 최대 4배 빠름) ──
+  const results = await Promise.allSettled(RSS_FEEDS.map(feed => fetchFeed(feed)));
+  const allNews = results.flatMap(r => r.status === 'fulfilled' ? r.value : []);
 
   document.getElementById("news-update-time").textContent =
     "업데이트: " + new Date().toLocaleTimeString("ko-KR");
