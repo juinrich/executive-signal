@@ -460,12 +460,42 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   // 로그인 됨 → 구독 확인
-  const isSubscribed = await checkSubscription(user.uid);
+
+  // ── 결제 완료 리다이렉트 처리 (webhook 타이밍 문제 완전 해결) ──────
+  const _params = new URLSearchParams(location.search);
+  if (_params.get('payment') === 'success' && _params.get('session_id')) {
+    history.replaceState({}, '', location.pathname);
+    try {
+      const _ar = await fetch('/api/activate-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: _params.get('session_id'), uid: user.uid })
+      });
+      const _ad = await _ar.json();
+      if (_ad.success) {
+        const _tm = document.createElement('div');
+        _tm.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#22c55e;color:#fff;padding:14px 28px;border-radius:8px;font-weight:700;font-size:16px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.3)';
+        _tm.textContent = '🎉 구독이 활성화되었습니다! 대시보드를 즐기세요.';
+        document.body.appendChild(_tm);
+        setTimeout(() => _tm.remove(), 4000);
+        navUser.style.display = 'flex';
+        navAvatar.src = user.photoURL || '';
+        navName.textContent = user.displayName || user.email;
+        dashboard.style.display = 'block';
+        document.getElementById('dashboard-timestamp').textContent =
+          new Date().toLocaleString('ko-KR') + ' 기준 | ' + (user.displayName || user.email) + ' 님 환영합니다';
+        initDashboard();
+        return;
+      }
+    } catch(_e) { console.warn('activate-subscription 실패:', _e); }
+  }
+
+  let isSubscribed = await checkSubscription(user.uid);
 
   if (!isSubscribed) {
-    gateSub.classList.add("show");
+    gateSub.classList.add('show');
     // 로그아웃 버튼 연결
-    document.getElementById("gate-logout-btn").onclick = () => signOut(auth);
+    document.getElementById('gate-logout-btn').onclick = () => signOut(auth);
     return;
   }
 
