@@ -379,7 +379,7 @@ footer {
 import { initializeApp }          from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import { getAuth, signInWithCredential, GoogleAuthProvider, signOut, onAuthStateChanged }
                                    from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, getDocs, collection, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
 // ── Firebase 설정 (기존 Executive Signal과 동일) ──────────────────
 const firebaseConfig = {
@@ -476,6 +476,17 @@ onAuthStateChanged(auth, async (user) => {
       dashboard.style.display = 'block';
       document.getElementById('dashboard-timestamp').textContent = new Date().toLocaleString('ko-KR') + ' 기준 | ' + (user.displayName || user.email) + ' 님 환영합니다';
       initDashboard();
+        // ── dart_signals 실데이터 로드 ─────────────────────────────────────
+        (async () => {
+          try {
+            const snap = await getDocs(query(
+              collection(db, 'dart_signals'),
+              orderBy('savedAt', 'desc'), limit(20)
+            ));
+            const sigs = snap.docs.map(d => d.data());
+            if (sigs.length > 0 && window.renderDartSignals) window.renderDartSignals(sigs);
+          } catch(e) { console.warn('[DART] 로드 실패:', e.message); }
+        })();
       // 백그라운드에서 구독 활성화 (실패해도 대시보드는 그대로 표시)
       if (_sid) {
         fetch('/api/activate-subscription', {
@@ -516,6 +527,17 @@ onAuthStateChanged(auth, async (user) => {
     `${new Date().toLocaleString("ko-KR")} 기준  |  ${user.displayName || user.email} 님 환영합니다`;
 
   initDashboard();
+        // ── dart_signals 실데이터 로드 ─────────────────────────────────────
+        (async () => {
+          try {
+            const snap = await getDocs(query(
+              collection(db, 'dart_signals'),
+              orderBy('savedAt', 'desc'), limit(20)
+            ));
+            const sigs = snap.docs.map(d => d.data());
+            if (sigs.length > 0 && window.renderDartSignals) window.renderDartSignals(sigs);
+          } catch(e) { console.warn('[DART] 로드 실패:', e.message); }
+        })();
 });
 
 // ── 로그인 버튼 ──────────────────────────────────────────────────
@@ -1007,6 +1029,43 @@ window.selectPlan = function(plan) {
   if(m) m.classList.toggle('selected', plan==='monthly');
   if(a) a.classList.toggle('selected', plan==='annual');
 };
+</script>
+
+<script>
+  // ── DART 신호 렌더링 전역 함수 ─────────────────────────────────────────
+  window.renderDartSignals = function(signals) {
+    var dart = document.getElementById('dart-tbody');
+    if (!dart) return;
+    dart.innerHTML = '';
+    signals.forEach(function(d) {
+      var corp  = d['기업명'] || '-';
+      var name  = d['임원명'] || '-';
+      var qty   = Number(d['trade_qty']   || 0);
+      var price = Number(d['unit_price']  || 0);
+      var total = Number(d['매수금액(원)'] || 0);
+      var level = d['임원등급'] || '';
+      var date  = d['공시일자'] || d['filedAt'] || '';
+      var rcept = d['rcept_no'] || '';
+      var impact = level === 'High' ? '🔥 임원(대표급)' : '📈 임원 매수';
+      var col    = level === 'High' ? '#f0b429' : '#22c55e';
+      var dateStr = date.length >= 8
+        ? date.slice(0,4) + '.' + date.slice(4,6) + '.' + date.slice(6,8)
+        : date;
+      var link = rcept ? 'https://dart.fss.or.kr/dsaf001/main.do?rcpNo=' + rcept : '#';
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td class="dart-row-impact" style="color:' + col + '">' + impact + '</td>' +
+        '<td><strong>' + corp + '</strong><br><small style="color:#555">' + (d['종목코드']||'') + '</small></td>' +
+        '<td><a href="' + link + '" target="_blank" style="color:#aaa;text-decoration:none">' +
+          name + ' · ' + (qty > 0 ? qty.toLocaleString('ko-KR') + '주' : '-') +
+          ' × ' + (price > 0 ? price.toLocaleString('ko-KR') + '원' : '-') +
+          ' = <strong style="color:#D4AF37">' +
+          (total > 0 ? total.toLocaleString('ko-KR') + '원' : '확인불가') +
+          '</strong></a></td>' +
+        '<td style="color:#555;white-space:nowrap">' + dateStr + '</td>';
+      dart.appendChild(tr);
+    });
+  };
 </script>
 </body>
 </html>
