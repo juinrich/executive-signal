@@ -1,13 +1,12 @@
 // api/dart-collector.js
-// DART Open API -> Firestore 신호 수집기
-// Vercel Cron: 평일 오전 8:00 KST (23:00 UTC) 실행
-// vercel.json crons 설정:
-//   { "path": "/api/dart-collector", "schedule": "0 23 * * 1-5" }
+// n8n "임원매수리포트260302" 워크플로우를 Vercel 서버리스로 이식
+// 핵심 방식: list.json → document.xml(ZIP) → XML 직접 파싱 → (+) 필터 → Firestore 저장
+// Cron: vercel.json "0 23 * * 1-5" (평일 KST 08:00)
 
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 
-// Firebase Admin 초기화
+// ── Firebase Admin 초기화 ─────────────────────────────────────────────────
 function initFirebase() {
   if (getApps().length > 0) return;
   initializeApp({
@@ -19,23 +18,25 @@ function initFirebase() {
   });
 }
 
-// DART Open API 설정
-const DART_BASE = 'https://opendart.fss.or.kr/api';
 const DART_KEY  = process.env.DART_API_KEY;
+const DART_BASE = 'https://opendart.fss.or.kr/api';
 
-// 오늘 날짜를 YYYYMMDD 형식으로 반환 (KST)
-function todayKST() {
-  const d = new Date(Date.now() + 9 * 3600 * 1000);
-  return d.toISOString().slice(0, 10).replace(/-/g, '');
+// ── 날짜 범위 (n8n Date_Range_Generator 동일 로직) ────────────────────────
+function getDateRange() {
+  const now = new Date(Date.now() + 9 * 3600000); // KST
+  const fmt = (d) => {
+    const y  = d.getUTCFullYear();
+    const m  = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(d.getUTCDate()).padStart(2, '0');
+    return y + m + dd;
+  };
+  const end_de  = fmt(now);
+  const daysBack = now.getUTCDay() === 1 ? 3 : 1; // 월요일이면 3일 전(금요일)
+  const from    = new Date(now.getTime() - daysBack * 86400000);
+  return { bgn_de: fmt(from), end_de };
 }
 
-// N일 전 날짜를 YYYYMMDD 형식으로 반환
-function daysAgo(n) {
-  const d = new Date(Date.now() + 9 * 3600 * 1000 - n * 86400 * 1000);
-  return d.toISOString().slice(0, 10).replace(/-/g, '');
-}
-
-// DART 지분공시 목록 조회 (pblntf_ty=D: 임원/주요주주 소유상황 보고서)
+// ── 1. DART 공시 목록 (list.json) ─────────────────────────────────────────
 async function fetchDartList(bgn_de, end_de) {
   const url = new URL(DART_BASE + '/list.json');
   url.searchParams.set('crtfc_key',  DART_KEY);
@@ -45,138 +46,160 @@ async function fetchDartList(bgn_de, end_de) {
   url.searchParams.set('page_count', '100');
   url.searchParams.set('sort',       'date');
   url.searchParams.set('sort_mth',   'desc');
-
   const res  = await fetch(url.toString());
   const data = await res.json();
-  if (data.status !== '000') {
-    console.warn('[DART] list.json 오류:', data.status, data.message);
-    return [];
+  if (data.status !== '000') { console.warn('[DART] list 오류:', data.message); return []; }
+  return (data.list || []).filter(f => f.stock_code); // 상장 종목만
+}
+
+// ── 2. 공시 원문 ZIP 다운로드 (document.xml) ─────────────────────────────
+async function downloadZip(rcptNo) {
+  const url = DART_BASE + '/document.xml?crtfc_key=' + DART_KEY + '&rcept_no=' + rcptNo;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('document.xml HTTP ' + res.status);
+  return Buffer.from(await res.arrayBuffer());
+}
+
+// ── 3. ZIP → XML 추출 (외부 의존성 없음) ─────────────────────────────────
+function extractXmlFromZip(zipBuf) {
+  const chunks = [];
+  let i = 0;
+  while (i < zipBuf.length - 4) {
+    // Local file header signature PK\x03\x04
+    if (zipBuf[i]===0x50 && zipBuf[i+1]===0x4B && zipBuf[i+2]===0x03 && zipBuf[i+3]===0x04) {
+      const compression = zipBuf.readUInt16LE(i + 8);
+      const compSize    = zipBuf.readUInt32LE(i + 18);
+      const fnLen       = zipBuf.readUInt16LE(i + 26);
+      const extraLen    = zipBuf.readUInt16LE(i + 28);
+      const dataStart   = i + 30 + fnLen + extraLen;
+      const filename    = zipBuf.slice(i + 30, i + 30 + fnLen).toString('utf8');
+      if (filename.toLowerCase().endsWith('.xml')) {
+        const compressed = zipBuf.slice(dataStart, dataStart + compSize);
+        try {
+          const xml = compression === 0
+            ? compressed.toString('utf8')
+            : require('zlib').inflateRawSync(compressed).toString('utf8');
+          chunks.push(xml);
+        } catch(e) { console.warn('[ZIP] 압축 해제 실패:', filename); }
+      }
+      i = dataStart + compSize;
+    } else { i++; }
   }
-  return data.list || [];
+  return chunks.join('\n');
 }
 
-// DART 개별 보고서 상세 조회 (majorstock.json)
-async function fetchReportDetail(rcpNo) {
-  const url = new URL(DART_BASE + '/majorstock.json');
-  url.searchParams.set('crtfc_key', DART_KEY);
-  url.searchParams.set('rcpno',     rcpNo);
+// ── 4. XML 파싱 → 매수 신호 추출 (n8n Robust_XML_Parser V8 로직) ──────────
+function parseXmlSignals(xml, filing) {
+  const signals = [];
+  const rowRegex = /<TR[^>]*>([\s\S]*?)<\/TR>/g;
+  let match;
+  while ((match = rowRegex.exec(xml)) !== null) {
+    const row = match[1];
+    const reasonMatch = row.match(/<T[UE][^>]*AUNIT="RPT_RSN"[^>]*>([^<]*)<\/T[UE]>/);
+    if (!reasonMatch || !reasonMatch[1].includes('(+)')) continue;
 
-  const res  = await fetch(url.toString());
-  const data = await res.json();
-  if (data.status !== '000') return [];
-  return data.list || [];
+    const getVal = (acode) => {
+      const re = new RegExp('<TE[^>]*ACODE="' + acode + '"[^>]*>([^<]*)<\/TE>');
+      const m  = row.match(re);
+      return m ? m[1].replace(/[^0-9]/g, '') : '0';
+    };
+
+    const qty        = parseInt(getVal('MDF_STK_CNT')) || 0;
+    const unitAmt2   = parseInt(getVal('ACI_AMT2'))    || 0;
+    const unitPrc    = parseInt(getVal('UNT_PRC'))      || 0;
+    const unitPrice  = unitAmt2 || unitPrc;
+    const totalAmount = qty * unitPrice;
+
+    // 5천만원 미만 제외
+    if (totalAmount < 50000000) continue;
+
+    const reason = reasonMatch[1].trim();
+    const notes  = reason.replace('(+)', '').trim()
+      + (unitPrice === 0 && qty > 0 ? ' (단가 미기재/비현금 취득)' : '');
+    const jobTitle = filing.pblntf_nm || '';
+    const level    = ['대표','의장','회장','사장'].some(k => jobTitle.includes(k)) ? 'High' : 'Low';
+
+    signals.push({
+      rcpNo:       filing.rcept_no,
+      corpName:    filing.corp_name,
+      corpCode:    filing.corp_code,
+      stockCode:   filing.stock_code || '',
+      reportNm:    filing.report_nm,
+      filedAt:     filing.rcept_dt,
+      dartUrl:     'https://dart.fss.or.kr/dsaf001/main.do?rcpNo=' + filing.rcept_no,
+      '기업명':    filing.corp_name,
+      '종목코드':  filing.stock_code || '',
+      '임원명':    filing.flr_nm || '',
+      '공시일자':  filing.rcept_dt,
+      '임원등급':  level,
+      '매수금액(원)': totalAmount,
+      '변동사유':  reason,
+      '매수일자':  filing.rcept_dt,
+      '비고':      notes,
+      rcept_no:    filing.rcept_no,
+      trade_qty:   qty,
+      unit_price:  unitPrice,
+      savedAt:     null, // Timestamp은 서버에서 주입
+    });
+  }
+  return signals;
 }
 
-// 필터링 로직: 장내매수 + 5천만원 이상
-const MIN_AMOUNT = 50000000;
-
-function isValidSignal(row) {
-  const method = (row.acqs_mth2 || row.acqs_mth || '').trim();
-  const amount = parseKoreanNumber(row.acqs_amount || row.acqsAmount || '0');
-  return method.includes('장내매수') && amount >= MIN_AMOUNT;
-}
-
-// 한국식 숫자 문자열 파서
-function parseKoreanNumber(str) {
-  if (!str) return 0;
-  const cleaned = String(str).replace(/[,\s원]/g, '');
-  const num = parseInt(cleaned, 10);
-  return isNaN(num) ? 0 : num;
-}
-
-// Firestore 배치 저장 (컬렉션: dart_signals, 문서ID: rcpNo_rowIdx)
-async function saveSignals(db, signals) {
-  if (signals.length === 0) return 0;
+// ── 5. Firestore 저장 ─────────────────────────────────────────────────────
+async function saveToFirestore(db, signals) {
+  if (!signals.length) return 0;
+  const { Timestamp } = await import('firebase-admin/firestore');
   const batch = db.batch();
   for (const sig of signals) {
-    const ref = db.collection('dart_signals').doc(sig.rcpNo + '_' + sig.rowIdx);
-    batch.set(ref, sig, { merge: true });
+    sig.savedAt = Timestamp.now();
+    const docId = sig.rcpNo + '_' + sig.trade_qty + '_' + sig.unit_price;
+    batch.set(db.collection('dart_signals').doc(docId), sig, { merge: true });
   }
   await batch.commit();
   return signals.length;
 }
 
-// 신호 객체 생성
-function buildSignal(filing, row, rowIdx) {
-  return {
-    rcpNo:        filing.rcept_no,
-    corpName:     filing.corp_name,
-    corpCode:     filing.corp_code,
-    stockCode:    filing.stock_code || '',
-    reportNm:     filing.report_nm,
-    filedAt:      filing.rcept_dt,
-    dartUrl:      'https://dart.fss.or.kr/dsaf001/main.do?rcpNo=' + filing.rcept_no,
-    reporterName: row.repror_nm    || '',
-    reporterRole: row.repror_role  || '',
-    stockType:    row.stkqy_tp_nm  || '',
-    acqsMethod:   row.acqs_mth2    || row.acqs_mth || '',
-    acqsShares:   parseKoreanNumber(row.trmend_qy    || '0'),
-    acqsAmount:   parseKoreanNumber(row.acqs_amount  || '0'),
-    acqsPrice:    parseKoreanNumber(row.acqs_pp      || '0'),
-    beforeShares: parseKoreanNumber(row.bftr_posesn_stock_qy  || '0'),
-    afterShares:  parseKoreanNumber(row.atftr_posesn_stock_qy || '0'),
-    afterRatio:   row.atftr_posesn_stock_rt || '',
-    rowIdx,
-    savedAt: Timestamp.now(),
-  };
-}
-
-// Vercel 서버리스 핸들러
+// ── 메인 핸들러 ───────────────────────────────────────────────────────────
 export default async function handler(req, res) {
-  const authHeader = req.headers['authorization'];
-  if (process.env.CRON_SECRET && authHeader !== 'Bearer ' + process.env.CRON_SECRET) {
+  const auth = req.headers['authorization'];
+  if (process.env.CRON_SECRET && auth !== 'Bearer ' + process.env.CRON_SECRET) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
-
-  if (!DART_KEY) {
-    return res.status(500).json({ error: 'DART_API_KEY 환경변수가 설정되지 않았습니다.' });
-  }
+  if (!DART_KEY) return res.status(500).json({ error: 'DART_API_KEY 환경변수 없음' });
 
   try {
     initFirebase();
     const db = getFirestore();
+    const { bgn_de, end_de } = getDateRange();
+    console.log('[DART] 조회:', bgn_de, '~', end_de);
 
-    const end_de = todayKST();
-    const bgn_de = daysAgo(3);
-
-    console.log('[DART] 공시 목록 조회:', bgn_de, '~', end_de);
     const filings = await fetchDartList(bgn_de, end_de);
-    console.log('[DART] 공시', filings.length, '건 발견');
+    console.log('[DART] 공시:', filings.length, '건');
 
-    const signals = [];
+    const allSignals = [];
     let processed = 0;
-
     for (const filing of filings) {
-      if (!filing.stock_code) continue;
       try {
-        const rows = await fetchReportDetail(filing.rcept_no);
-        for (let i = 0; i < rows.length; i++) {
-          if (isValidSignal(rows[i])) {
-            signals.push(buildSignal(filing, rows[i], i));
-          }
-        }
+        const zip  = await downloadZip(filing.rcept_no);
+        const xml  = extractXmlFromZip(zip);
+        const sigs = parseXmlSignals(xml, filing);
+        allSignals.push(...sigs);
         processed++;
-        await new Promise(r => setTimeout(r, 100));
-      } catch (e) {
-        console.warn('[DART]', filing.rcept_no, '상세 조회 실패:', e.message);
-      }
+        await new Promise(r => setTimeout(r, 150));
+      } catch(e) { console.warn('[DART]', filing.rcept_no, '실패:', e.message); }
     }
 
-    const saved = await saveSignals(db, signals);
+    const saved = await saveToFirestore(db, allSignals);
+    console.log('[DART] 완료 | 처리:', processed, '신호:', allSignals.length, '저장:', saved);
 
-    console.log('[DART] 처리:', processed, '건 / 신호:', signals.length, '건 저장');
     return res.status(200).json({
-      ok:        true,
-      period:    bgn_de + '~' + end_de,
-      filings:   filings.length,
-      processed,
-      signals:   signals.length,
-      saved,
+      ok: true, period: bgn_de + '~' + end_de,
+      filings: filings.length, processed,
+      signals: allSignals.length, saved,
       timestamp: new Date().toISOString(),
     });
-
-  } catch (err) {
-    console.error('[DART] 수집 오류:', err);
+  } catch(err) {
+    console.error('[DART] 오류:', err);
     return res.status(500).json({ error: err.message });
   }
 }
