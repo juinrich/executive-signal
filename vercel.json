@@ -17,6 +17,10 @@
     {
       "path": "/api/dart-collector",
       "schedule": "0 23 * * 1-5"
+    },
+    {
+      "path": "/api/dart-sender",
+      "schedule": "32 23 * * 1-5"
     }
   ]
 }
