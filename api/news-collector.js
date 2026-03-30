@@ -1,8 +1,8 @@
 // api/news-collector.js - Vercel 서버사이드 RSS 수집기
 // Google News RSS (글로벌 접근 가능) + fast-xml-parser
-import { XMLParser } from 'fast-xml-parser';
+const { XMLParser } = require('fast-xml-parser');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -28,15 +28,15 @@ export default async function handler(req, res) {
       if (!r.ok) return [];
       const xml = await r.text();
       const obj = parser.parse(xml);
-      const channel = obj?.rss?.channel || {};
+      const channel = obj && obj.rss && obj.rss.channel ? obj.rss.channel : {};
       const rawItems = channel.item || [];
       const items = Array.isArray(rawItems) ? rawItems : [rawItems];
-      return items.slice(0, 5).map(it => {
-        const title = String(it.title?.__cdata || it.title || '').trim();
+      return items.slice(0, 5).map(function(it) {
+        const title = String(it.title && it.title.__cdata ? it.title.__cdata : (it.title || '')).trim();
         const link = String(it.link || '#').trim();
         const pub = String(it.pubDate || '').trim();
-        return { title, link, pub, src: feed.name };
-      }).filter(it => it.title);
+        return { title: title, link: link, pub: pub, src: feed.name };
+      }).filter(function(it) { return it.title; });
     } catch (e) {
       clearTimeout(t);
       console.warn('[news-collector]', feed.name, e.message);
@@ -45,10 +45,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    const results = await Promise.allSettled(feeds.map(f => fetchOne(f)));
-    const items = results.flatMap(r => r.status === 'fulfilled' ? r.value : []);
-    return res.status(200).json({ ok: true, count: items.length, items });
+    const results = await Promise.allSettled(feeds.map(function(f) { return fetchOne(f); }));
+    const items = results.flatMap(function(r) { return r.status === 'fulfilled' ? r.value : []; });
+    return res.status(200).json({ ok: true, count: items.length, items: items });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e.message });
   }
-}
+};
