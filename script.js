@@ -4,6 +4,7 @@
 // ============================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
 import { getAuth, signInWithCredential, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCq2Tzk2-hhXDBu8bu-uxNozJPZ4NrtoSw",
@@ -18,6 +19,7 @@ const N8N_SAMPLE_WEBHOOK_URL = "https://munjuin.app.n8n.cloud/webhook/sample-req
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
 const loginBtn = document.getElementById("auth-login-btn");
@@ -25,40 +27,65 @@ const logoutBtn = document.getElementById("auth-logout-btn");
 const userInfo = document.getElementById("auth-user-info");
 const userAvatar = document.getElementById("auth-user-avatar");
 const userName = document.getElementById("auth-user-name");
+const startBtn = document.getElementById("start-or-dashboard-btn");
+
 let currentUser = null;
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   currentUser = user;
   if (user) {
     loginBtn.style.display = "none";
     userInfo.style.display = "flex";
     userAvatar.src = user.photoURL || "";
     userName.textContent = user.displayName || user.email;
+
+    // 네비 버튼 → 대시보드로 변경
+    if (startBtn) {
+      startBtn.textContent = "대시보드";
+      startBtn.href = "/dashboard.html";
+    }
+
+    // 이메일 자동 입력
     ["checkout-email", "checkout-email-annual"].forEach((id) => {
       const el = document.getElementById(id);
       if (el && !el.value) el.value = user.email;
     });
+
+    // 구독자 자동 리다이렉트
+    try {
+      const snap = await getDoc(doc(db, "users", user.uid));
+      const sub = snap.data()?.subscription;
+      if (sub?.status === "active") {
+        window.location.href = "/dashboard.html";
+      }
+    } catch (e) {
+      console.warn("subscription check failed:", e);
+    }
   } else {
     loginBtn.style.display = "inline-flex";
     userInfo.style.display = "none";
+    if (startBtn) {
+      startBtn.textContent = "시작하기";
+      startBtn.href = "#pricing";
+    }
   }
 });
 
 // ── Google 로그인: GIS(Google Identity Services) 방식 ──
 loginBtn?.addEventListener("click", () => {
-  if (typeof google === 'undefined' || !google.accounts) {
+  if (typeof google === "undefined" || !google.accounts) {
     alert("Google 로그인을 초기화하는 중입니다. 잠시 후 다시 시도해주세요.");
     return;
   }
   const tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: '729919164559-259m9uhs1vv8qv4939ko8gu4d4behu4i.apps.googleusercontent.com',
-    scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile openid',
-    prompt: 'select_account',
+    client_id: "729919164559-259m9uhs1vv8qv4939ko8gu4d4behu4i.apps.googleusercontent.com",
+    scope: "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile openid",
+    prompt: "select_account",
     callback: async (tokenResponse) => {
       if (tokenResponse && tokenResponse.access_token) {
         const credential = GoogleAuthProvider.credential(null, tokenResponse.access_token);
         signInWithCredential(auth, credential).catch(e => {
-          console.error('signIn error:', e);
+          console.error("signIn error:", e);
           alert("로그인에 실패했습니다: " + e.message);
         });
       }
@@ -127,7 +154,7 @@ sampleBtn?.addEventListener("click", async () => {
   }
 });
 
-// ── Stripe 결제 (Toss Payments 대신 Stripe 사용) ──────────────────
+// ── Stripe 결제 ────────────────────────────────────────────────────
 async function startStripeCheckout(emailInputId, plan) {
   if (!currentUser) {
     alert("구독 결제는 로그인 후 이용 가능합니다.\n상단의 [Google 로그인] 버튼을 눌러주세요.");
@@ -141,22 +168,20 @@ async function startStripeCheckout(emailInputId, plan) {
     receiveEmailEl?.focus();
     return;
   }
-
-  const btn = receiveEmailEl?.closest('.checkout-box')?.querySelector('button');
-  const origText = btn ? btn.textContent : '';
+  const btn = receiveEmailEl?.closest(".checkout-box")?.querySelector("button");
+  const origText = btn ? btn.textContent : "";
   if (btn) { btn.disabled = true; btn.textContent = "결제 페이지 연결 중..."; }
-
   try {
-    const resp = await fetch('/api/create-checkout-session', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const resp = await fetch("/api/create-checkout-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ uid: currentUser.uid, email: receiveEmail, plan })
     });
     const data = await resp.json();
     if (data.url) {
       location.href = data.url;
     } else {
-      throw new Error(data.error || '결제 URL을 받지 못했습니다.');
+      throw new Error(data.error || "결제 URL을 받지 못했습니다.");
     }
   } catch (e) {
     alert("결제 창을 여는 중 오류가 발생했습니다:\n" + e.message);
