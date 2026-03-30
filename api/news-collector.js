@@ -1,64 +1,54 @@
 // api/news-collector.js - Vercel 서버사이드 RSS 수집기
-// 브라우저 CORS 제한 우회: 서버에서 직접 RSS를 가져와 JSON 반환
-
-export const config = { runtime: 'nodejs' };
+// fast-xml-parser로 XML 파싱 (regex 사용 안 함)
+import { XMLParser } from 'fast-xml-parser';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const RSS_FEEDS = [
+  const feeds = [
     { name: '한국경제', url: 'https://www.hankyung.com/feed/economy' },
     { name: '연합뉴스', url: 'https://www.yna.co.kr/RSS/economy.xml' },
     { name: '이데일리', url: 'https://rss.edaily.co.kr/edailyrss/economy.xml' },
     { name: '머니투데이', url: 'https://news.mt.co.kr/mtadmin/etc/rss.html?type=1' },
   ];
 
-  async function fetchFeed(feed) {
-    const controller = new AbortController();
-    const tid = setTimeout(() => controller.abort(), 7000);
+  const parser = new XMLParser({ ignoreAttributes: false, cdataPropName: '__cdata' });
+
+  async function fetchOne(feed) {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 7000);
     try {
       const r = await fetch(feed.url, {
-        signal: controller.signal,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; ExecutiveSignalBot/1.0)',
-          'Accept': 'application/rss+xml, application/xml, text/xml, */*',
-        },
+        signal: ctrl.signal,
+        headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/xml, text/xml, */*' },
       });
-      clearTimeout(tid);
+      clearTimeout(t);
       if (!r.ok) return [];
       const xml = await r.text();
-      const items = [];
-      const itemRegex = /<item[^>]*>([sS]*?)</item>/gi;
-      let m;
-      while ((m = itemRegex.exec(xml)) !== null && items.length < 6) {
-        const block = m[1];
-        const title = (block.match(/<title[^>]*>(?:<![CDATA[)?([sS]*?)(?:]]>)?</title>/) || [])[1] || '';
-        const link = (block.match(/<link[^>]*>([^<]+)/) || [])[1] || '#';
-        const pub = (block.match(/<pubDate[^>]*>([^<]+)/) || [])[1] || '';
-        if (title.trim()) {
-          items.push({
-            title: title.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').trim(),
-            link: link.trim(),
-            pub,
-            src: feed.name,
-          });
-        }
-      }
-      return items;
+      const obj = parser.parse(xml);
+      const channel = obj?.rss?.channel || obj?.feed || {};
+      const rawItems = channel.item || channel.entry || [];
+      const items = Array.isArray(rawItems) ? rawItems : [rawItems];
+      return items.slice(0, 6).map(it => ({
+        title: String(it.title?.__cdata || it.title || '').trim(),
+        link: String(it.link || it.guid || '#').trim(),
+        pub: String(it.pubDate || it.updated || '').trim(),
+        src: feed.name,
+      })).filter(it => it.title);
     } catch (e) {
-      clearTimeout(tid);
+      clearTimeout(t);
       console.warn('[news-collector]', feed.name, e.message);
       return [];
     }
   }
 
   try {
-    const results = await Promise.allSettled(RSS_FEEDS.map(f => fetchFeed(f)));
-    const allNews = results.flatMap(r => r.status === 'fulfilled' ? r.value : []);
-    return res.status(200).json({ ok: true, count: allNews.length, items: allNews });
+    const results = await Promise.allSettled(feeds.map(f => fetchOne(f)));
+    const items = results.flatMap(r => r.status === 'fulfilled' ? r.value : []);
+    return res.status(200).json({ ok: true, count: items.length, items });
   } catch (e) {
     return res.status(500).json({ ok: false, error: e.message });
   }
-    }
+}
