@@ -904,8 +904,14 @@ window.autoFetchNews = async function() {
   newsOut.style.display = "none";
 
   // ── 병렬 수집: 4개 피드를 동시에 요청 (기존 순차 방식 대비 최대 4배 빠름) ──
-  const results = await Promise.allSettled(RSS_FEEDS.map(feed => fetchFeed(feed)));
-  const allNews = results.flatMap(r => r.status === 'fulfilled' ? r.value : []);
+  let allNews = [];
+  try {
+    const _nc = new AbortController();
+    const _nct = setTimeout(() => _nc.abort(), 12000);
+    const _nr = await fetch('/api/news-collector', { signal: _nc.signal });
+    clearTimeout(_nct);
+    if (_nr.ok) { const _nd = await _nr.json(); allNews = _nd.ok ? (_nd.items||[]) : []; }
+  } catch(_ne) { console.warn('[news] /api/news-collector 실패:', _ne.message); }
 
   document.getElementById("news-update-time").textContent =
     "업데이트: " + new Date().toLocaleTimeString("ko-KR");
