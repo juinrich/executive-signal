@@ -1,7 +1,8 @@
 {
   "rewrites": [
     { "source": "/success", "destination": "/success.html" },
-    { "source": "/fail",    "destination": "/fail.html" }
+    { "source": "/fail",    "destination": "/fail.html" },
+    { "source": "/api/v1/:path*", "destination": "/api/v1/:path*" }
   ],
   "headers": [
     {
