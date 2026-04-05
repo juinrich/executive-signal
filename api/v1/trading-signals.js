@@ -234,10 +234,11 @@ module.exports = async function handler(req, res) {
     const limit = Math.min(parseInt(req.query.limit || '20', 10), 50);
 
     const fromDate = getDateRange(daysBack);
+        // 복합 인덱스 불필요하도록 단일 orderBy만 사용
+        // 매수금액 정렬은 JS에서 후처리
     const snap = await db.collection('dart_signals')
       .where('filedAt', '>=', fromDate)
       .orderBy('filedAt', 'desc')
-      .orderBy('매수금액(원)', 'desc')
       .limit(100)
       .get();
 
